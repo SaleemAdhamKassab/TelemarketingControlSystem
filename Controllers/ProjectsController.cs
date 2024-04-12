@@ -32,32 +32,30 @@ namespace TelemarketingControlSystem.Controllers
 
 
 		[HttpGet("getProjectTypes")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getProjectTypes() => _returnResultWithMessage(_projectService.getProjectTypes());
 
 
 		[HttpGet("getLineTypes")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getLineTypes() => _returnResultWithMessage(_projectService.getLineTypes());
 
 		[HttpGet("getRegions")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getRegions() => _returnResultWithMessage(_projectService.getRegions());
 
 		[HttpGet("getCities")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-		public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
-
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])] public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
 		[HttpGet("getCallStatuses")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
 		public IActionResult getCallStatuses() => _returnResultWithMessage(_projectService.getCallStatuses());
 
 		[HttpGet("getEmployees")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getEmployees() => _returnResultWithMessage(_projectService.getEmployees());
 
 		[HttpGet("getLineGenerations")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getLineGenerations() => _returnResultWithMessage(_projectService.getLineGenerations());
 
 		[HttpGet("getById")]
