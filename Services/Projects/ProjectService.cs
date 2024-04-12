@@ -420,7 +420,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.SaveChanges();
 				transaction.Commit();
 
-				return new ResultWithMessage($"Project with ID: {id} deleted successfully", string.Empty);
+				return new ResultWithMessage(id, string.Empty);
 			}
 			catch (Exception e)
 			{
