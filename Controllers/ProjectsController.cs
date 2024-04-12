@@ -45,9 +45,11 @@ namespace TelemarketingControlSystem.Controllers
 		public IActionResult getRegions() => _returnResultWithMessage(_projectService.getRegions());
 
 		[HttpGet("getCities")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])] public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])] 
+		public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
+
 		[HttpGet("getCallStatuses")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getCallStatuses() => _returnResultWithMessage(_projectService.getCallStatuses());
 
 		[HttpGet("getEmployees")]
