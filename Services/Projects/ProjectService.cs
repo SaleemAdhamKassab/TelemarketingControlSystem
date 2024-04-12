@@ -38,7 +38,7 @@ namespace TelemarketingControlSystem.Services.Projects
 			else if (authData.tenantAccesses[0].RoleList.Contains("Telemarketer"))
 			{
 				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-				query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeID == employee.Id));
+				query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeID == employee.Id) && !e.IsDeleted);
 			}
 
 			else
