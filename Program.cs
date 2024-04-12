@@ -62,8 +62,13 @@ builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme).AddNegotiat
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<ClaimsPrincipal>(s => s.GetService<IHttpContextAccessor>().HttpContext.User);
 //////
-
-builder.Services.AddCors();
+builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", builder =>
+{
+	builder.AllowAnyMethod()
+			.AllowAnyHeader()
+			.SetIsOriginAllowed(origin => true) // allow any origin you can change here to allow localhost:4200
+			.AllowCredentials();
+}));
 
 var app = builder.Build();
 
@@ -74,7 +79,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 //}
 
-app.UseCors(e => e.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
+app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
