@@ -5,6 +5,10 @@ using TelemarketingControlSystem.Models.Data;
 using System.Data;
 using static TelemarketingControlSystem.Helper.ConstantValues;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
+using Microsoft.AspNetCore.SignalR;
+using TelemarketingControlSystem.Services.NotificationHub;
+using NPOI.SS.Formula.Functions;
+using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -24,12 +28,13 @@ namespace TelemarketingControlSystem.Services.Projects
 		Task<ResultWithMessage> delete(int id, TenantDto authData);
 	}
 
-	public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment) : IProjectService
+	public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification) : IProjectService
 	{
 		private readonly ApplicationDbContext _db = db;
 		private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
-
-		private IQueryable<Project> getProjectData(ProjectFilterModel filter, TenantDto authData)
+        private readonly IHubContext<NotifiyHub, INotificationService> _notification=notification;
+			
+        private IQueryable<Project> getProjectData(ProjectFilterModel filter, TenantDto authData)
 		{
 			IQueryable<Project> query;
 
@@ -329,8 +334,16 @@ namespace TelemarketingControlSystem.Services.Projects
 				};
 
 				_db.SaveChanges();
-				transaction.Commit();
-				return getById(createdProjectId, authData);
+                //---------------------Send Notification--------------------------
+                await _notification.Clients.All.SendMessage(new Notification
+                {
+                    ProjectId = createdProjectId,
+                    ProjectName = model.Name,
+                    Message = "New Project :" + model.Name + " created by " + authData.userName + ""
+                });
+                transaction.Commit();
+				
+                return getById(createdProjectId, authData);
 			}
 			catch (Exception ex)
 			{

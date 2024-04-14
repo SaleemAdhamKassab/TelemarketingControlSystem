@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.OpenApi.Models;
 using TelemarketingControlSystem.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using TelemarketingControlSystem.Services.NotificationHub;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSignalR();
 
 // Add services to the container.
 builder.Services.AddAutoMapper(typeof(Program));
@@ -83,6 +85,7 @@ app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.MapHub<NotifiyHub>("/Notify");
 
 app.MapControllers();
 
