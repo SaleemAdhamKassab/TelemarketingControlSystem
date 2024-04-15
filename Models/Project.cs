@@ -18,5 +18,7 @@ namespace TelemarketingControlSystem.Models
 		public int TypeId { get; set; }
 
 		public List<ProjectDetail> ProjectDetails { get; set; }
+
+		public virtual ICollection<Notification.Notification> Notifications { get; set; }
 	}
 }

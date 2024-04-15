@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TelemarketingControlSystem.Models.Auth;
+using TelemarketingControlSystem.Models.Notification;
 
 namespace TelemarketingControlSystem.Models.Data
 {
@@ -23,8 +24,12 @@ namespace TelemarketingControlSystem.Models.Data
 		public DbSet<UserToken> UserTokens { get; set; }
 		public DbSet<Permission> Permissions { get; set; }
 
+		//-----------------------Notification--------------------------
+		public DbSet<HubClient> HubClients { get; set; }
+		public DbSet<Notification.Notification> Notifications { get; set; }
 
-		protected override void OnModelCreating(ModelBuilder modelBuilder)
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
 

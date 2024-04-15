@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 using TelemarketingControlSystem.Services.NotificationHub;
 using NPOI.SS.Formula.Functions;
 using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
+using TelemarketingControlSystem.Models.Notification;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -145,6 +146,30 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return project.Id;
 		}
+
+		private async Task pushNotification(int? projectId,string  projectName, List<string> userIds)
+		{
+			List<string> userNames=_db.Employees.Where(x=> userIds.Contains(x.Id.ToString())).Select(x=>x.UserName).ToList();
+
+            foreach (string s in userNames)
+			{
+				var client = _db.HubClients.FirstOrDefault(x => x.userName == s);
+				Notification not = new Notification("Create New Project", projectId,projectName+" By :"+ s.Substring(s.IndexOf("\\") + 1), s, client!=null?client.connectionId:null);
+				_db.Notifications.Add(not);
+				_db.SaveChanges();
+				if(client!=null && !string.IsNullOrEmpty(client.connectionId))
+				{
+                    await _notification.Clients.Client(client.connectionId).SendMessage(new NotificationDto
+                    {
+                        ProjectId = (int)projectId,
+                        ProjectName = projectName,
+                        Message = not.Message
+                    });
+                }
+               
+
+            }
+		}
 		public List<ListViewModel> convertListToListViewModel(List<string> list)
 		{
 			List<ListViewModel> result = [];
@@ -163,7 +188,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return result.OrderBy(e => e.Name).ToList();
 		}
-
+	
 
 		///////////////////////////// Exposed Methods /////////////////////////////
 		public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
@@ -334,13 +359,8 @@ namespace TelemarketingControlSystem.Services.Projects
 				};
 
 				_db.SaveChanges();
-                //---------------------Send Notification--------------------------
-                await _notification.Clients.All.SendMessage(new Notification
-                {
-                    ProjectId = createdProjectId,
-                    ProjectName = model.Name,
-                    Message = "New Project :" + model.Name + " created by " + authData.userName + ""
-                });
+				//---------------------Send Notification--------------------------
+				await pushNotification(createdProjectId, model.Name, employeeIDs);
                 transaction.Commit();
 				
                 return getById(createdProjectId, authData);

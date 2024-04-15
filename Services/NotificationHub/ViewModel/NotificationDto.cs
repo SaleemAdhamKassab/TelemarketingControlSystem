@@ -1,6 +1,6 @@
 ﻿namespace TelemarketingControlSystem.Services.NotificationHub.ViewModel
 {
-    public class Notification
+    public class NotificationDto
     {
         public int ProjectId { get; set; }
         public string ProjectName { get; set; }
