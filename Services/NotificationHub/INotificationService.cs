@@ -4,7 +4,7 @@ namespace TelemarketingControlSystem.Services.NotificationHub
 {
     public interface INotificationService
     {
-         Task SendMessage(NotificationDto notification);
+         Task SendMessage(NotificationListViewModel notification);
 
 
     }

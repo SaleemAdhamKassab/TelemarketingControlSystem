@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using TelemarketingControlSystem.ActionFilters;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.NotificationHub;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
@@ -36,6 +37,23 @@ namespace TelemarketingControlSystem.Controllers
         {
             var user = authData();
             return Ok(_hubService.UpdateHubClient(user.userName,connectionId));
+        }
+
+        [HttpGet("ReadNotification")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+
+        public IActionResult ReadNotification(int id)
+        {
+            return Ok(_hubService.ReadNotification(id));
+        }
+
+        [HttpGet("GetUserNotification")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+
+        public IActionResult GetUserNotification()
+        {
+            var user = authData();
+            return Ok(_hubService.GetRecentlyNotification(user.userName));
         }
 
     }

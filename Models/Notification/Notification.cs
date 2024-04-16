@@ -16,7 +16,7 @@ namespace TelemarketingControlSystem.Models.Notification
         public string ? UserName { get; set; }
         public string ? connectionId { get; set; }
         public DateTime CreatedDate { get; set; }=DateTime.Now;
-
+        public bool IsRead { get; set; }
         public virtual Project Project { get; set; }
 
         public Notification() { }
@@ -29,6 +29,7 @@ namespace TelemarketingControlSystem.Models.Notification
             connectionId=connectionid;
             Type = NotType.CreateNewProject;
             CreatedDate = DateTime.Now;
+            IsRead = false;
         }
 
     }

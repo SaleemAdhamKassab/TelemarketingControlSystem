@@ -10,6 +10,7 @@ using TelemarketingControlSystem.Services.NotificationHub;
 using NPOI.SS.Formula.Functions;
 using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
+using Microsoft.OpenApi.Extensions;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -159,11 +160,17 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.SaveChanges();
 				if(client!=null && !string.IsNullOrEmpty(client.connectionId))
 				{
-                    await _notification.Clients.Client(client.connectionId).SendMessage(new NotificationDto
+                    await _notification.Clients.Client(client.connectionId).SendMessage(new NotificationListViewModel
                     {
-                        ProjectId = (int)projectId,
-                        ProjectName = projectName,
-                        Message = not.Message
+                       Id= not.Id,
+					   ProjectId=(int)projectId,
+					   ProjectName= projectName,
+					   Message= projectName +" By :"+ s.Substring(s.IndexOf("\\") + 1),
+					   IsRead=false,
+					   Type=NotificationType.NotType.CreateNewProject.GetDisplayName(),
+					   Title= "Create New Project",
+					   CreatedDate=DateTime.Now
+
                     });
                 }
                
