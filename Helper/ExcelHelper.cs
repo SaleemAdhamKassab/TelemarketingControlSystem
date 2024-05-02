@@ -8,13 +8,13 @@ namespace TelemarketingControlSystem.Helper
     {
         //Reference: https://juldhais.net/upload-and-save-excel-file-data-into-the-database-in-asp-net-core-web-api-44957cc8ddeb
 
-        private static void validateRequiredCell(string columnName, int rowNumber, object cellValue, List<string> validList)
+        private static void validateCell(string columnName, int rowNumber, object cellValue, List<string> validList)
         {
             rowNumber++;
             //if (string.IsNullOrEmpty(cellValue.ToString()))
             //	throw new Exception($"Empty {columnName} at line number: {rowNumber}");
 
-            if (!validList.Contains(cellValue.ToString()))
+            if (!string.IsNullOrEmpty(cellValue.ToString()) && !validList.Contains(cellValue.ToString()))
                 throw new Exception($"Invalid {columnName}: [{cellValue}] at line number: {rowNumber}");
         }
 
@@ -64,23 +64,23 @@ namespace TelemarketingControlSystem.Helper
                                 break;
 
                             case "LineType":
-                                validateRequiredCell(property.Name, currentRow, cell, ConstantValues.lineTypes);
+                                validateCell(property.Name, currentRow, cell, ConstantValues.lineTypes);
                                 break;
 
                             case "CallStatus":
-                                validateRequiredCell(property.Name, currentRow, cell, ConstantValues.callStatuses);
+                                validateCell(property.Name, currentRow, cell, ConstantValues.callStatuses);
                                 break;
 
                             case "Generation":
-                                validateRequiredCell(property.Name, currentRow, cell, ConstantValues.generations);
+                                validateCell(property.Name, currentRow, cell, ConstantValues.generations);
                                 break;
 
                             case "Region":
-                                validateRequiredCell(property.Name, currentRow, cell, ConstantValues.regions);
+                                validateCell(property.Name, currentRow, cell, ConstantValues.regions);
                                 break;
 
                             case "City":
-                                validateRequiredCell(property.Name, currentRow, cell, ConstantValues.cities);
+                                validateCell(property.Name, currentRow, cell, ConstantValues.cities);
                                 break;
                         }
                     }

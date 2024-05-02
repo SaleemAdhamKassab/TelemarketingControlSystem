@@ -14,16 +14,12 @@ namespace TelemarketingControlSystem.Models
 		public string? Contract { get; set; }
 		public string? AlternativeNumber { get; set; }
 		public string? Note { get; set; }
-		[Required]
-		public int LineTypeId { get; set; }
-		[Required]
-		public int GenerationId { get; set; }
-		[Required]
-		public int RegionId { get; set; }
-		[Required]
-		public int CityId { get; set; }
-		[Required]
-		public int CallStatusId { get; set; }
+		public int? LineTypeId { get; set; }
+		public int? GenerationId { get; set; }
+		public int? RegionId { get; set; }
+		public int? CityId { get; set; }
+		public int? CallStatusId { get; set; }
+
 		public int ProjectID { get; set; }
 		public Project Project { get; set; }
 		public int EmployeeID { get; set; }

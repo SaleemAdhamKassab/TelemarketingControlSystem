@@ -11,6 +11,7 @@ using NPOI.SS.Formula.Functions;
 using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
+using System.Linq;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -240,16 +241,6 @@ namespace TelemarketingControlSystem.Services.Projects
                                           .Where(e => e.Id == id && e.ProjectDetails.Any(e => e.EmployeeID == employee.Id) && !e.IsDeleted).FirstOrDefault();
             }
 
-
-
-            //Project project = _db.Projects.Include(e => e.ProjectDetails)
-            //							  .ThenInclude(e => e.Employee)
-            //							  .Where(e => e.Id == id && !e.IsDeleted).FirstOrDefault();
-
-
-
-
-
             if (project is null)
                 return new ResultWithMessage(null, $"The project with ID: {id} is not Exists");
 
@@ -276,16 +267,21 @@ namespace TelemarketingControlSystem.Services.Projects
                     SubSegment = e.SubSegment,
                     EmployeeID = e.EmployeeID,
                     EmployeeUserName = e.Employee.UserName,
-                    LineTypeId = e.LineTypeId,
-                    LineType = lineTypes.ElementAt(e.LineTypeId - 1),
-                    GenerationId = e.GenerationId,
-                    Generation = generations.ElementAt(e.GenerationId - 1),
-                    RegionId = e.RegionId,
-                    Region = regions.ElementAt((int)e.RegionId - 1),
-                    CityId = e.CityId,
-                    City = cities.ElementAt((int)e.CityId - 1),
-                    CallStatusId = e.CallStatusId,
-                    CallStatus = callStatuses.ElementAt((int)e.CallStatusId - 1)
+
+                    LineTypeId = e.LineTypeId != 0 ? e.LineTypeId : null,
+                    LineType = e.LineTypeId != 0 ? lineTypes.ElementAt(int.Parse(e.LineTypeId.ToString()) - 1) : null,
+
+                    GenerationId = e.GenerationId != 0 ? e.GenerationId : null,
+                    Generation = e.GenerationId != 0 ? generations.ElementAt(int.Parse(e.GenerationId.ToString()) - 1) : null,
+
+                    RegionId = e.RegionId != 0 ? e.RegionId : null,
+                    Region = e.RegionId != 0 ? regions.ElementAt((int)e.RegionId - 1) : null,
+
+                    CityId = e.CityId != 0 ? e.CityId : null,
+                    City = e.CityId != 0 ? cities.ElementAt((int)e.CityId - 1) : null,
+
+                    CallStatusId = e.CallStatusId != 0 ? e.CallStatusId : null,
+                    CallStatus = e.CallStatusId != 0 ? callStatuses.ElementAt((int)e.CallStatusId - 1) : null
                 }).ToList()
             };
 
@@ -357,11 +353,11 @@ namespace TelemarketingControlSystem.Services.Projects
                         Segment = gsmExcel.Segment,
                         ProjectID = createdProjectId,
                         EmployeeID = int.Parse(employeeIDs.ElementAt(empIndex)),
-                        RegionId = regions.IndexOf(gsmExcel.Region) + 1,
-                        LineTypeId = lineTypes.IndexOf(gsmExcel.LineType) + 1,
-                        CityId = cities.IndexOf(gsmExcel.City) + 1,
-                        CallStatusId = callStatuses.IndexOf(gsmExcel.CallStatus) + 1,
-                        GenerationId = generations.IndexOf(gsmExcel.Generation) + 1
+                        RegionId = gsmExcel.Region is not null ? regions.IndexOf(gsmExcel.Region) + 1 : null,
+                        LineTypeId = gsmExcel.LineType is not null ? lineTypes.IndexOf(gsmExcel.LineType) + 1 : null,
+                        CityId = gsmExcel.City is not null ? cities.IndexOf(gsmExcel.City) + 1 : null,
+                        CallStatusId = gsmExcel.CallStatus is not null ? callStatuses.IndexOf(gsmExcel.CallStatus) + 1 : null,
+                        GenerationId = gsmExcel.Generation is not null ? generations.IndexOf(gsmExcel.Generation) + 1 : null
                     };
 
                     _db.ProjectDetails.Add(projectDetail);
