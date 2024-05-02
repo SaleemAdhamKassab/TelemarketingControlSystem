@@ -29,6 +29,7 @@ namespace TelemarketingControlSystem.Services.Projects
         Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
         Task<ResultWithMessage> delete(int id, TenantDto authData);
         Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
+        Task<ResultWithMessage> updateProjectDetail(ProjectDetail projectDetail, TenantDto tenantDto);
     }
 
     public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification) : IProjectService
@@ -513,5 +514,27 @@ namespace TelemarketingControlSystem.Services.Projects
             }
         }
 
+        public async Task<ResultWithMessage> updateProjectDetail(ProjectDetail projectDetail, TenantDto authData)
+        {
+            ProjectDetail projectDetailToUpdate = await _db.ProjectDetails.FindAsync(projectDetail.Id);
+
+            if (projectDetailToUpdate is null)
+                return new ResultWithMessage(null, $"Empty Project Detail");
+
+            try
+            {
+                projectDetailToUpdate.CallStatusId = projectDetail.CallStatusId;
+                projectDetailToUpdate.EmployeeID = projectDetail.EmployeeID;
+                projectDetailToUpdate.Note = projectDetail.Note;
+
+                _db.Update(projectDetailToUpdate);
+                _db.SaveChanges();
+                return getById(projectDetail.ProjectID, authData);
+            }
+            catch (Exception e)
+            {
+                return new ResultWithMessage(null, e.Message);
+            }
+        }
     }
 }

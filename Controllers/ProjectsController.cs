@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
+using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.Projects;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
@@ -87,5 +88,8 @@ namespace TelemarketingControlSystem.Controllers
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
         public async Task<IActionResult> reDistributeProjectGSMs(int projectId, string EmployeeIds) => _returnResultWithMessage(await _projectService.reDistributeProjectGSMs(projectId, EmployeeIds, authData()));
 
+        [HttpPost("updateProjectDetail")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+        public async Task<IActionResult> updateProjectDetail(ProjectDetail projectDetail) => _returnResultWithMessage(await _projectService.updateProjectDetail(projectDetail, authData()));
     }
 }
