@@ -30,7 +30,7 @@ namespace TelemarketingControlSystem.Services.Projects
         Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
         Task<ResultWithMessage> delete(int id, TenantDto authData);
         Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
-        Task<ResultWithMessage> updateProjectDetail(ProjectDetail projectDetail, TenantDto tenantDto);
+        Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
     }
 
     public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification) : IProjectService
