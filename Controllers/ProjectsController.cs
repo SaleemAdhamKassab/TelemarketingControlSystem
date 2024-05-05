@@ -84,7 +84,7 @@ namespace TelemarketingControlSystem.Controllers
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
         public async Task<IActionResult> delete(int id) => _returnResultWithMessage(await _projectService.delete(id, authData()));
 
-        [HttpPost("reDistributeProjectGSMs")]
+        [HttpGet("reDistributeProjectGSMs")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
         public async Task<IActionResult> reDistributeProjectGSMs(int projectId, string EmployeeIds) => _returnResultWithMessage(await _projectService.reDistributeProjectGSMs(projectId, EmployeeIds, authData()));
 
