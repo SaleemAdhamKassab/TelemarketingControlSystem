@@ -48,7 +48,7 @@ namespace TelemarketingControlSystem.Services.Projects
             else if (authData.tenantAccesses[0].RoleList.Contains("Telemarketer"))
             {
                 Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-                query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeID == employee.Id) && !e.IsDeleted);
+                query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted);
             }
 
             else
@@ -90,7 +90,7 @@ namespace TelemarketingControlSystem.Services.Projects
             if (model.DateFrom >= model.DateTo)
                 return "Project End Date Should be greater than Start Date";
 
-            int projectGSMs = _db.ProjectDetails.Where(e => e.ProjectID == model.Id).Count();
+            int projectGSMs = _db.ProjectDetails.Where(e => e.ProjectId == model.Id).Count();
             if (model.Quota > projectGSMs)
                 return $"The Quota {model.Quota} should be equal or less than GSMs {projectGSMs}";
 
@@ -236,9 +236,9 @@ namespace TelemarketingControlSystem.Services.Projects
             {
                 Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
 
-                project = _db.Projects.Include(e => e.ProjectDetails.Where(e => e.EmployeeID == employee.Id))
+                project = _db.Projects.Include(e => e.ProjectDetails.Where(e => e.EmployeeId == employee.Id))
                                           .ThenInclude(e => e.Employee)
-                                          .Where(e => e.Id == id && e.ProjectDetails.Any(e => e.EmployeeID == employee.Id) && !e.IsDeleted).FirstOrDefault();
+                                          .Where(e => e.Id == id && e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted).FirstOrDefault();
             }
 
             if (project is null)
@@ -265,7 +265,7 @@ namespace TelemarketingControlSystem.Services.Projects
                     Contract = e.Contract,
                     Segment = e.Segment,
                     SubSegment = e.SubSegment,
-                    EmployeeID = e.EmployeeID,
+                    EmployeeID = e.EmployeeId,
                     EmployeeUserName = e.Employee.UserName,
 
                     LineTypeId = e.LineTypeId != 0 ? e.LineTypeId : null,
@@ -351,8 +351,8 @@ namespace TelemarketingControlSystem.Services.Projects
                         CreatedBy = authData.userName,
                         SubSegment = gsmExcel.SubSegment,
                         Segment = gsmExcel.Segment,
-                        ProjectID = createdProjectId,
-                        EmployeeID = int.Parse(employeeIDs.ElementAt(empIndex)),
+                        ProjectId = createdProjectId,
+                        EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex)),
                         RegionId = gsmExcel.Region is not null ? regions.IndexOf(gsmExcel.Region) + 1 : null,
                         LineTypeId = gsmExcel.LineType is not null ? lineTypes.IndexOf(gsmExcel.LineType) + 1 : null,
                         CityId = gsmExcel.City is not null ? cities.IndexOf(gsmExcel.City) + 1 : null,
@@ -409,7 +409,7 @@ namespace TelemarketingControlSystem.Services.Projects
                     for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
                     {
                         if (authData.tenantAccesses[0].RoleList.Contains("Admin"))
-                            projectToUpdate.ProjectDetails.ElementAt(i).EmployeeID = model.ProjectDetails.ElementAt(i).EmployeeID;
+                            projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
 
                         projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
                         projectToUpdate.ProjectDetails.ElementAt(i).CallStatusId = model.ProjectDetails.ElementAt(i).CallStatusId;
@@ -495,7 +495,7 @@ namespace TelemarketingControlSystem.Services.Projects
                         else
                             empIndex++;
 
-                        projectDetail.EmployeeID = int.Parse(employeeIDs.ElementAt(empIndex));
+                        projectDetail.EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex));
                     }
                 }
 
@@ -510,22 +510,22 @@ namespace TelemarketingControlSystem.Services.Projects
             }
         }
 
-        public async Task<ResultWithMessage> updateProjectDetail(ProjectDetail projectDetail, TenantDto authData)
+        public async Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto authData)
         {
-            ProjectDetail projectDetailToUpdate = await _db.ProjectDetails.FindAsync(projectDetail.Id);
+            ProjectDetail projectDetailToUpdate = await _db.ProjectDetails.FindAsync(model.Id);
 
             if (projectDetailToUpdate is null)
                 return new ResultWithMessage(null, $"Empty Project Detail");
 
             try
             {
-                projectDetailToUpdate.CallStatusId = projectDetail.CallStatusId;
-                projectDetailToUpdate.EmployeeID = projectDetail.EmployeeID;
-                projectDetailToUpdate.Note = projectDetail.Note;
+                projectDetailToUpdate.CallStatusId = model.CallStatusId;
+                projectDetailToUpdate.EmployeeId = model.EmployeeID;
+                projectDetailToUpdate.Note = model.Note;
 
                 _db.Update(projectDetailToUpdate);
                 _db.SaveChanges();
-                return getById(projectDetail.ProjectID, authData);
+                return getById(projectDetailToUpdate.ProjectId, authData);
             }
             catch (Exception e)
             {
