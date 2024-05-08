@@ -33,11 +33,13 @@ namespace TelemarketingControlSystem.Services.Projects
         Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
     }
 
-    public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification) : IProjectService
+    public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub
+        , INotificationService> notification , IConfiguration config) : IProjectService
     {
         private readonly ApplicationDbContext _db = db;
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
         private readonly IHubContext<NotifiyHub, INotificationService> _notification = notification;
+        private readonly IConfiguration _config= config;
 
         private IQueryable<Project> getProjectData(ProjectFilterModel filter, TenantDto authData)
         {
@@ -158,7 +160,7 @@ namespace TelemarketingControlSystem.Services.Projects
             foreach (string s in userNames)
             {
                 var client = _db.HubClients.FirstOrDefault(x => x.userName == s);
-                Notification not = new Notification(title, projectId, msg, s, client != null ? client.connectionId : null);
+                Notification not = new Notification(title, projectId, msg, s, client != null ? client.connectionId : null , _config["ProfileImg"].Replace("VarXXX", s.Substring(s.IndexOf("\\") + 1)));
                 _db.Notifications.Add(not);
                 _db.SaveChanges();
                 if (client != null && !string.IsNullOrEmpty(client.connectionId))
@@ -172,7 +174,8 @@ namespace TelemarketingControlSystem.Services.Projects
                         IsRead = false,
                         Type = NotificationType.NotType.CreateNewProject.GetDisplayName(),
                         Title = title,
-                        CreatedDate = DateTime.Now
+                        CreatedDate = DateTime.Now,
+                        Img= _config["ProfileImg"].Replace("VarXXX", s.Substring(s.IndexOf("\\") + 1))
 
                     });
                 }

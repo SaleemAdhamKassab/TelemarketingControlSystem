@@ -21,6 +21,7 @@ namespace TelemarketingControlSystem.Services.NotificationHub.ViewModel
         public DateTime CreatedDate { get; set; }
         public bool IsRead { get; set; }
         public string duration { get; set; }
+        public string Img { get; set; }
     }
 
 

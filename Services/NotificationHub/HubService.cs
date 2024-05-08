@@ -63,6 +63,7 @@ namespace TelemarketingControlSystem.Services.NotificationHub
                 CreatedDate=x.CreatedDate,
                 IsRead=x.IsRead,
                 duration= DateTime.Now.Subtract(x.CreatedDate).ToString("hh\\:mm\\:ss"),
+                Img=x.Img
 
             }).ToList();
 

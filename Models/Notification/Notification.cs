@@ -17,10 +17,12 @@ namespace TelemarketingControlSystem.Models.Notification
         public string ? connectionId { get; set; }
         public DateTime CreatedDate { get; set; }=DateTime.Now;
         public bool IsRead { get; set; }
+        public string ? Img { get; set; }
+
         public virtual Project Project { get; set; }
 
         public Notification() { }
-        public Notification(string title, int? projectId, string message, string? userName, string? connectionid)
+        public Notification(string title, int? projectId, string message, string? userName, string? connectionid ,string ? img)
         {
             Title=title;
             ProjectId=projectId;
@@ -30,6 +32,7 @@ namespace TelemarketingControlSystem.Models.Notification
             Type = NotType.CreateNewProject;
             CreatedDate = DateTime.Now;
             IsRead = false;
+            Img = img;
         }
 
     }
