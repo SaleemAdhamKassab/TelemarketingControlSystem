@@ -57,7 +57,24 @@ namespace TelemarketingControlSystem.Services.Projects
                 return null;
 
             if (!string.IsNullOrEmpty(filter.SearchQuery))
-                query = query.Where(e => e.Name.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
+                query = query.Where(e => e.Name.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower())
+                              || e.Id.ToString().Contains(filter.SearchQuery.Trim().ToLower()));
+
+            if(filter.DateFrom!=null && filter.DateTo!=null)
+            {
+                query = query.Where(x => x.DateFrom >= filter.DateFrom && x.DateTo <= filter.DateTo);
+            }
+
+            if(filter.CreatedBy != null &&  filter.CreatedBy.Count()!=0  )
+            {
+                query = query.Where(x => filter.CreatedBy.Contains(x.CreatedBy));
+            }
+
+            if (filter.TypeIds != null && filter.TypeIds.Count() != 0)
+            {
+                query = query.Where(x => filter.TypeIds.Contains(x.TypeId));
+            }
+
 
             return query;
         }

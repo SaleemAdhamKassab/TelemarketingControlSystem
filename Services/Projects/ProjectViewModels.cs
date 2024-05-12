@@ -90,7 +90,14 @@ namespace TelemarketingControlSystem.Services.Projects
         [Required]
         public List<ProjectDetailViewModel> ProjectDetails { get; set; }
     }
-    public class ProjectFilterModel : GeneralFilterModel { }
+    public class ProjectFilterModel : GeneralFilterModel
+    {
+        public DateTime ? DateFrom { get; set; }
+        public DateTime ? DateTo { get; set; }
+        public string[] ? CreatedBy { get; set; }
+        public int[] ? TypeIds { get; set; }
+        
+    }
     public class ListViewModel
     {
         public int Id { get; set; }
