@@ -8,6 +8,7 @@ using Microsoft.OpenApi.Models;
 using TelemarketingControlSystem.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using TelemarketingControlSystem.Services.NotificationHub;
+using TelemarketingControlSystem.Services.ProjectStatistics;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
@@ -21,11 +22,12 @@ builder.Services.AddSwaggerGen();
 
 // Sql server Db Connections
 //builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(builder.Configuration.GetConnectionString("RemoteDb")));
 
 
 //services
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IProjectStatisticsService, ProjectStatisticsService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IWindowsAuthService, WindowsAuthService>();
 builder.Services.AddScoped<IHubService, HubService>();
