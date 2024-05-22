@@ -21,7 +21,11 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 			if (!authData.tenantAccesses[0].RoleList.Contains("Admin"))
 				return new ResultWithMessage(null, "insufficient privileges");
 
-			Project project = _db.Projects.Where(e => e.Id == projectId).Include(e => e.ProjectDetails.Where(e=>e.LastUpdateDate>=dateFrom && e.LastUpdateDate<=dateTo )).FirstOrDefault();
+			if (dateFrom > dateTo)
+				return new ResultWithMessage(null, "The end date must be greater than start date");
+
+			Project project = _db.Projects.Where(e => e.Id == projectId).Include(e => e.ProjectDetails.Where(e => e.LastUpdateDate >= dateFrom && e.LastUpdateDate <= dateTo)).FirstOrDefault();
+
 
 			if (project is null)
 				return new ResultWithMessage(null, string.Empty);

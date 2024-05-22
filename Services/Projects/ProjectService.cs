@@ -365,11 +365,12 @@ namespace TelemarketingControlSystem.Services.Projects
 						GSM = gsmExcel.GSM,
 						Note = gsmExcel.Note,
 						AddedOn = DateTime.Now,
+						CreatedBy = authData.userName,
 						LastUpdateDate = DateTime.Now,
+						LastUpdatedBy = authData.userName,
 						AlternativeNumber = gsmExcel.AlternativeNumber,
 						Bundle = gsmExcel.Bundle,
 						Contract = gsmExcel.Contract,
-						CreatedBy = authData.userName,
 						SubSegment = gsmExcel.SubSegment,
 						Segment = gsmExcel.Segment,
 						ProjectId = createdProjectId,
@@ -546,7 +547,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				projectDetailToUpdate.Note = model.Note;
 				projectDetailToUpdate.LastUpdatedBy = authData.userName;
 				projectDetailToUpdate.LastUpdateDate = DateTime.Now;
-				
+
 
 				_db.Update(projectDetailToUpdate);
 				_db.SaveChanges();
