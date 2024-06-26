@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
-using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Services.Auth;
-using TelemarketingControlSystem.Services.Projects;
 using TelemarketingControlSystem.Services.ProjectStatistics;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 
@@ -33,8 +31,12 @@ namespace TelemarketingControlSystem.Controllers
 		}
 
 
+		//[HttpGet("getProjectStatistics")]
+		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		//public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
+
 		[HttpGet("getProjectStatistics")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-		public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
+		public IActionResult projectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
 	}
 }

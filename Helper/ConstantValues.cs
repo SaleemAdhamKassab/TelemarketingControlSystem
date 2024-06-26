@@ -6,6 +6,7 @@
 		public enum enAllowedFileExtension { xlsx }
 		public enum enExcelUploadFolderName { ExcelUploads };
 		public enum enAccessType { all, allOnlyMe, viewOnlyMe, denied }
+		public enum enRoles { Admin , Telemarketer , Researcher }
 
 		public static List<string> projectTypes = ["RS", "SG", "TM"];
 		public static List<string> lineTypes = ["Pre", "Post"];

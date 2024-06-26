@@ -4,20 +4,22 @@
 	{
 		public class ProjectStatisticsViewModel
 		{
-			public string ProjectName { get; set; }
-			public string CreatedBy { get; set; }
-			public int TotalGSMCount { get; set; }
-			public int Quota { get; set; }
-			public DateTime DateFrom { get; set; }
-			public DateTime DateTo { get; set; }
-
-			public List<GSMStatusStatistic> GSMStatusStatistics { get; set; }
+			public List<CardViewModel> ProjectGeneralDetails { get; set; } = [];
+			public List<CardViewModel> CallStatuses { get; set; } = [];
+			public List<CardViewModel> TelemarketersProductivity { get; set; } = [];
+			public List<CompletedQuotaPerDay> CompletedQuotaPerDays { get; set; } = [];
 		}
 
-		public class GSMStatusStatistic
+		public class CardViewModel
 		{
-			public string Status { get; set; }
-			public int GSMCount { get; set; }
+			public string Category { get; set; }
+			public int Count { get; set; }
+			public int Total { get; set; }
+		}
+		public class CompletedQuotaPerDay
+		{
+			public DateOnly Date { get; set; }
+			public int Count { get; set; }
 		}
 	}
 }

@@ -31,7 +31,6 @@ namespace TelemarketingControlSystem.Controllers
             return result;
         }
 
-
         [HttpGet("getProjectTypes")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
         public IActionResult getProjectTypes() => _returnResultWithMessage(_projectService.getProjectTypes());

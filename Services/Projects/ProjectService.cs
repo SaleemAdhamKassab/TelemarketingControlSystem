@@ -45,9 +45,9 @@ namespace TelemarketingControlSystem.Services.Projects
 		{
 			IQueryable<Project> query;
 
-			if (authData.tenantAccesses[0].RoleList.Contains("Admin"))
+			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
 				query = _db.Projects.Where(e => !e.IsDeleted);
-			else if (authData.tenantAccesses[0].RoleList.Contains("Telemarketer"))
+			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
 			{
 				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
 				query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted);
@@ -246,13 +246,13 @@ namespace TelemarketingControlSystem.Services.Projects
 		{
 			Project project = new();
 
-			if (authData.tenantAccesses[0].RoleList.Contains("Admin"))
+			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
 			{
 				project = _db.Projects.Include(e => e.ProjectDetails)
 										  .ThenInclude(e => e.Employee)
 										  .Where(e => e.Id == id && !e.IsDeleted).FirstOrDefault();
 			}
-			else if (authData.tenantAccesses[0].RoleList.Contains("Telemarketer"))
+			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
 			{
 				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
 
@@ -413,7 +413,7 @@ namespace TelemarketingControlSystem.Services.Projects
 			var transaction = _db.Database.BeginTransaction();
 			try
 			{
-				if (authData.tenantAccesses[0].RoleList.Contains("Admin"))
+				if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
 				{
 					projectToUpdate.Name = model.Name;
 					projectToUpdate.DateFrom = model.DateFrom;
@@ -430,7 +430,7 @@ namespace TelemarketingControlSystem.Services.Projects
 					model.ProjectDetails = model.ProjectDetails.OrderBy(e => e.Id).ToList();
 					for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
 					{
-						if (authData.tenantAccesses[0].RoleList.Contains("Admin"))
+						if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
 							projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
 
 						projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
@@ -491,7 +491,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 		public async Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto authData)
 		{
-			if (!authData.tenantAccesses[0].RoleList.Contains("Admin"))
+			if (!authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
 				return new ResultWithMessage(null, $"Insufficient Privilege to do ReDistribute Project GSMs");
 
 			Project project = await _db.Projects.Include(e => e.ProjectDetails)
