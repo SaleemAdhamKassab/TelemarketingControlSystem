@@ -53,15 +53,14 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 		private List<CardViewModel> getCallStatuses(Project project)
 		{
 			List<CardViewModel> result = [];
-
-			result = project.ProjectDetails
-										.GroupBy(g => g.CallStatusId).
-										Select(e => new CardViewModel
-										{
-											Category = ConstantValues.callStatuses.ElementAt(e.Key.Value - 1),
-											Count = e.Count(),
-											Total = 0
-										}).ToList();
+			result = ConstantValues.callStatuses
+					 .GroupBy(g => g)
+					 .Select(e => new CardViewModel
+					 {
+						 Category = e.Key,
+						 Count = project.ProjectDetails.Where(x => x.CallStatusId == ConstantValues.callStatuses.IndexOf(e.Key)).Count(),
+						 Total = 0
+					 }).ToList();
 
 			return result;
 		}
