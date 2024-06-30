@@ -111,6 +111,9 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 
 			ProjectStatisticsViewModel result = new()
 			{
+				ProjectName = project.Name,
+				CreatedBy = project.CreatedBy,
+				AddedOn = project.AddedOn,
 				ProjectGeneralDetails = getProjectGeneralDetails(project),
 				CallStatuses = getCallStatuses(project),
 				TelemarketersProductivity = getTelemarketersProductivity(project),

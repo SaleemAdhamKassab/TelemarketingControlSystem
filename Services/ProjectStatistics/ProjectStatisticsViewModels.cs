@@ -4,6 +4,9 @@
 	{
 		public class ProjectStatisticsViewModel
 		{
+			public string ProjectName { get; set; }
+			public string CreatedBy { get; set; }
+			public DateTime AddedOn { get; set; }
 			public List<CardViewModel> ProjectGeneralDetails { get; set; } = [];
 			public List<CardViewModel> CallStatuses { get; set; } = [];
 			public List<CardViewModel> TelemarketersProductivity { get; set; } = [];

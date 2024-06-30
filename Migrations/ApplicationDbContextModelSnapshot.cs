@@ -47,7 +47,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AccessLogs");
+                    b.ToTable("AccessLogs", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.Device", b =>
@@ -81,7 +81,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("ParentId");
 
-                    b.ToTable("Devices");
+                    b.ToTable("Devices", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.GroupTenantRole", b =>
@@ -109,7 +109,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("GroupTenantRoles");
+                    b.ToTable("GroupTenantRoles", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.Permission", b =>
@@ -127,7 +127,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Permissions");
+                    b.ToTable("Permissions", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.Role", b =>
@@ -145,7 +145,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Roles");
+                    b.ToTable("Roles", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.RolePermission", b =>
@@ -168,7 +168,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermissions");
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.Tenant", b =>
@@ -186,7 +186,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tenants");
+                    b.ToTable("Tenants", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.TenantDevice", b =>
@@ -209,7 +209,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("TenantDevices");
+                    b.ToTable("TenantDevices", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.UserTenantRole", b =>
@@ -237,7 +237,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("UserTenantRoles");
+                    b.ToTable("UserTenantRoles", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.UserToken", b =>
@@ -274,7 +274,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("UserTokens");
+                    b.ToTable("UserTokens", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Employee", b =>
@@ -308,7 +308,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Employees");
+                    b.ToTable("Employees", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Notification.HubClient", b =>
@@ -329,7 +329,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("HubClients");
+                    b.ToTable("HubClients", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Notification.Notification", b =>
@@ -373,7 +373,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Project", b =>
@@ -419,7 +419,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Projects", t =>
+                    b.ToTable("Projects", null, t =>
                         {
                             t.HasCheckConstraint("Ck_Project_Dates", "[DateTo]>[DateFrom]");
                         });
@@ -498,7 +498,7 @@ namespace TelemarketingControlSystem.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectDetails");
+                    b.ToTable("ProjectDetails", (string)null);
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.Device", b =>
