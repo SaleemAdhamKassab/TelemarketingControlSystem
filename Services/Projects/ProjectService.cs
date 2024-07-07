@@ -387,7 +387,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 				_db.SaveChanges();
 				//---------------------Send Notification--------------------------
-				await pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + "created By :" + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project");
+				await pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project");
 				transaction.Commit();
 
 				return getById(createdProjectId, authData);
