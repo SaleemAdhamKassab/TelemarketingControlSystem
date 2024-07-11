@@ -48,7 +48,7 @@ namespace TelemarketingControlSystem.Helper
 
                     var colIndex = colIndexList[property.Name];
                     var cell = row.GetCell(colIndex);
-                    if (property.PropertyType == typeof(string))
+                    if (cell is not null && property.PropertyType == typeof(string))
                     {
                         cell.SetCellType(CellType.String);
                         property.SetValue(obj, cell.StringCellValue);
@@ -84,8 +84,8 @@ namespace TelemarketingControlSystem.Helper
                                 break;
                         }
                     }
-                    else
-                        property.SetValue(obj, Convert.ChangeType(cell.StringCellValue, property.PropertyType));
+                    ////else if(cell is not null)
+                    ////    property.SetValue(obj, Convert.ChangeType(cell.StringCellValue, property.PropertyType));
                 }
 
                 listResult.Add(obj);
