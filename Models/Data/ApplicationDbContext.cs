@@ -11,6 +11,7 @@ namespace TelemarketingControlSystem.Models.Data
 		public DbSet<Employee> Employees { get; set; }
 		public DbSet<ProjectDetail> ProjectDetails { get; set; }
 		public DbSet<Project> Projects { get; set; }
+		public DbSet<CallStatus> CallStatuses { get; set; }
 
 		//Auth Models
 		public DbSet<AccessLog> AccessLogs { get; set; }
@@ -29,7 +30,7 @@ namespace TelemarketingControlSystem.Models.Data
 		public DbSet<Notification.Notification> Notifications { get; set; }
 
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
 

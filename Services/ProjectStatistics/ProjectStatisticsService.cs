@@ -23,7 +23,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 			result.Add(new CardViewModel()
 			{
 				Category = "Actual Completion",
-				Count = project.ProjectDetails.Where(e => e.CallStatusId == ConstantValues.callStatuses.IndexOf("Completed")).Count(),
+				//Count = project.ProjectDetails.Where(e => e.CallStatusId == ConstantValues.callStatuses.IndexOf("Completed")).Count(),
+				Count = -1,
 				Total = project.ProjectDetails.Count,
 			});
 
@@ -53,12 +54,13 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 		private List<CardViewModel> getCallStatuses(Project project)
 		{
 			List<CardViewModel> result = [];
-			result = ConstantValues.callStatuses
+			result = _db.CallStatuses
 					 .GroupBy(g => g)
 					 .Select(e => new CardViewModel
 					 {
-						 Category = e.Key,
-						 Count = project.ProjectDetails.Where(x => x.CallStatusId == ConstantValues.callStatuses.IndexOf(e.Key)).Count(),
+						 Category = e.Key.Name,
+						 //Count = project.ProjectDetails.Where(x => x.CallStatusId == ConstantValues.callStatuses.IndexOf(e.Key)).Count(),
+						 Count = -1,
 						 Total = 0
 					 }).ToList();
 
@@ -83,14 +85,14 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 		{
 			List<CompletedQuotaPerDay> result = [];
 
-			result = project.ProjectDetails
-				.Where(e => e.CallStatusId == ConstantValues.callStatuses.IndexOf("Completed"))
-				.GroupBy(g => DateOnly.FromDateTime(g.LastUpdateDate.GetValueOrDefault()))
-				.Select(e => new CompletedQuotaPerDay
-				{
-					Date = e.Key,
-					Count = e.Count()
-				}).ToList();
+			//result = project.ProjectDetails
+			//	.Where(e => e.CallStatusId == ConstantValues.callStatuses.IndexOf("Completed"))
+			//	.GroupBy(g => DateOnly.FromDateTime(g.LastUpdateDate.GetValueOrDefault()))
+			//	.Select(e => new CompletedQuotaPerDay
+			//	{
+			//		Date = e.Key,
+			//		Count = e.Count()
+			//	}).ToList();
 
 			return result;
 		}

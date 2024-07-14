@@ -13,6 +13,7 @@ using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using NPOI.OpenXmlFormats;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -79,16 +80,16 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return query;
 		}
-		private IQueryable<ProjectDetail> getProjectDetailsData(ProjectFilterModel filter, TenantDto authData)
+		private IQueryable<ProjectDetail> getProjectDetailsData(int id, ProjectFilterModel filter, TenantDto authData)
 		{
 			IQueryable<ProjectDetail> query;
 
 			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-				query = _db.ProjectDetails.Where(e => !e.IsDeleted);
+				query = _db.ProjectDetails.Where(e => e.ProjectId == id && !e.IsDeleted);
 			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
 			{
 				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-				query = _db.ProjectDetails.Where(e => e.EmployeeId == employee.Id && !e.IsDeleted);
+				query = _db.ProjectDetails.Where(e => e.ProjectId == id && e.EmployeeId == employee.Id && !e.IsDeleted);
 			}
 
 			else
@@ -115,10 +116,6 @@ namespace TelemarketingControlSystem.Services.Projects
 		private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
 		{
 
-			var x = 5;
-
-
-
 			return model.Select(e => new ProjectDetailViewModel
 			{
 				Id = e.Id,
@@ -127,18 +124,18 @@ namespace TelemarketingControlSystem.Services.Projects
 				EmployeeID = e.EmployeeId,
 				Bundle = e.Bundle,
 				CallStatusId = e.CallStatusId,
-				CallStatus = e.CallStatusId != null && e.CallStatusId != 0 ? callStatuses[e.CallStatusId.Value - 1] : "N/A",
+				CallStatus = _db.CallStatuses.SingleOrDefault(x => x.Id == e.Id).Name,
 				CityId = e.CityId,
-				//City = (int)e.CityId != 0 ? cities.ElementAt((int)e.CityId - 1) : string.Empty,
+				//City = e.CityId == 0 ? "N/A" : cities.ElementAt((int)e.CityId - 1),
 				Contract = e.Contract,
 				GenerationId = e.GenerationId,
-				//Generation = (int)e.GenerationId != 0 ? generations.ElementAt((int)e.GenerationId - 1) : string.Empty,
+				//Generation = e.GenerationId == 0 ? "N/A" : generations.ElementAt((int)e.GenerationId - 1),
 				GSM = e.GSM,
 				LineTypeId = e.LineTypeId,
-				//LineType = (int)e.LineTypeId != 0 ? lineTypes.ElementAt((int)e.LineTypeId - 1) : string.Empty,
+				//LineType = e.LineTypeId == 0 ? "N/A" : lineTypes.ElementAt((int)e.LineTypeId - 1),
 				Note = e.Note,
-				//Region = (int)e.RegionId != 0 ? regions.ElementAt((int)e.RegionId - 1) : string.Empty,
 				RegionId = e.RegionId,
+				//Region = e.RegionId == 0 ? "N/A" : regions.ElementAt((int)e.RegionId - 1),
 				Segment = e.Segment,
 				SubSegment = e.SubSegment
 			});
@@ -281,7 +278,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		public ResultWithMessage getLineTypes() => new(convertListToListViewModel(lineTypes), string.Empty);
 		public ResultWithMessage getRegions() => new(convertListToListViewModel(regions), string.Empty);
 		public ResultWithMessage getCities() => new(convertListToListViewModel(cities), string.Empty);
-		public ResultWithMessage getCallStatuses() => new(convertListToListViewModel(callStatuses), string.Empty);
+		public ResultWithMessage getCallStatuses() => new ResultWithMessage(_db.CallStatuses.ToList(), string.Empty);
 		public ResultWithMessage getLineGenerations() => new(convertListToListViewModel(generations), string.Empty);
 		public ResultWithMessage getEmployees()
 		{
@@ -323,7 +320,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 
 			//1- Apply Filters just search query
-			var query = getProjectDetailsData(filter, authData);
+			var query = getProjectDetailsData(id, filter, authData);
 
 			//2- Generate List View Model
 			var queryViewModel = convertProjectDetailToListViewModel(query);
@@ -339,7 +336,8 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			//4- pagination
 			int resultSize = queryViewModel.Count();
-			var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
+			//var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
+			var resultData = queryViewModel.Skip(0).Take(1000).ToList();
 
 			//5- return 
 			//return new ResultWithMessage(new DataWithSize(resultSize, resultData), "");
@@ -446,7 +444,7 @@ namespace TelemarketingControlSystem.Services.Projects
 						RegionId = gsmExcel.Region is not null ? regions.IndexOf(gsmExcel.Region) + 1 : null,
 						LineTypeId = gsmExcel.LineType is not null ? lineTypes.IndexOf(gsmExcel.LineType) + 1 : null,
 						CityId = gsmExcel.City is not null ? cities.IndexOf(gsmExcel.City) + 1 : null,
-						CallStatusId = gsmExcel.CallStatus is not null ? callStatuses.IndexOf(gsmExcel.CallStatus) + 1 : null,
+						CallStatusId = gsmExcel.CallStatus is not null ? _db.CallStatuses.SingleOrDefault(e => e.Name == gsmExcel.CallStatus).Id : 0,
 						GenerationId = gsmExcel.Generation is not null ? generations.IndexOf(gsmExcel.Generation) + 1 : null
 					};
 
@@ -578,7 +576,7 @@ namespace TelemarketingControlSystem.Services.Projects
 			{
 				foreach (ProjectDetail projectDetail in project.ProjectDetails)
 				{
-					if (!projectDetail.IsDeleted && projectDetail.CallStatusId == callStatuses.IndexOf("Initialize") + 1)
+					if (!projectDetail.IsDeleted && projectDetail.CallStatusId == 2)
 					{
 						if (empIndex == employeeIDs.Count - 1)
 							empIndex = 0;
