@@ -29,7 +29,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData);
 		ResultWithMessage getByFilter(ProjectFilterModel model, TenantDto authData);
 		Task<ResultWithMessage> create(CreateProjectViewModel model, TenantDto authData);
-		Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
+		//Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
 		Task<ResultWithMessage> delete(int id, TenantDto authData);
 		Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
 		Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
@@ -115,7 +115,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
 		private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
 		{
-
 			return model.Select(e => new ProjectDetailViewModel
 			{
 				Id = e.Id,
@@ -123,25 +122,28 @@ namespace TelemarketingControlSystem.Services.Projects
 				EmployeeUserName = e.Employee.UserName,
 				EmployeeID = e.EmployeeId,
 				Bundle = e.Bundle,
-				CallStatusId = e.CallStatusId,
-				CallStatus = _db.CallStatuses.SingleOrDefault(x => x.Id == e.Id).Name,
-				CityId = e.CityId,
-				//City = e.CityId == 0 ? "N/A" : cities.ElementAt((int)e.CityId - 1),
 				Contract = e.Contract,
-				GenerationId = e.GenerationId,
-				//Generation = e.GenerationId == 0 ? "N/A" : generations.ElementAt((int)e.GenerationId - 1),
 				GSM = e.GSM,
-				LineTypeId = e.LineTypeId,
-				//LineType = e.LineTypeId == 0 ? "N/A" : lineTypes.ElementAt((int)e.LineTypeId - 1),
 				Note = e.Note,
-				RegionId = e.RegionId,
-				//Region = e.RegionId == 0 ? "N/A" : regions.ElementAt((int)e.RegionId - 1),
 				Segment = e.Segment,
-				SubSegment = e.SubSegment
+				SubSegment = e.SubSegment,
+
+				CallStatusId = e.CallStatusId,
+				CallStatus = _db.CallStatuses.Single(x => x.Id == e.CallStatusId).Name,
+
+				CityId = e.CityId,
+				City = cities[(int)e.CityId].ToString(),
+
+				GenerationId = e.GenerationId,
+				Generation = generations[(int)e.GenerationId].ToString(),
+
+				LineTypeId = e.LineTypeId,
+				LineType = lineTypes[(int)e.LineTypeId].ToString(),
+
+				RegionId = e.RegionId,
+				Region = regions[(int)e.RegionId].ToString()
 			});
 		}
-
-
 
 		private async Task<string> validateCreateProjectViewModel(CreateProjectViewModel model)
 		{
@@ -258,7 +260,7 @@ namespace TelemarketingControlSystem.Services.Projects
 			List<ListViewModel> result = [];
 
 
-			for (int i = 0; i < list.Count; i++)
+			for (int i = 2; i < list.Count; i++)
 			{
 				ListViewModel model = new()
 				{
@@ -336,8 +338,8 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			//4- pagination
 			int resultSize = queryViewModel.Count();
-			//var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
-			var resultData = queryViewModel.Skip(0).Take(1000).ToList();
+			var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
+
 
 			//5- return 
 			//return new ResultWithMessage(new DataWithSize(resultSize, resultData), "");
@@ -377,7 +379,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			//4- pagination
 			int resultSize = queryViewModel.Count();
-			var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
+			var resultData = queryViewModel.Skip(filter.PageIndex * filter.PageSize).Take(filter.PageSize).ToList();
 
 			//5- return 
 			return new ResultWithMessage(new DataWithSize(resultSize, resultData), "");
@@ -419,6 +421,9 @@ namespace TelemarketingControlSystem.Services.Projects
 				List<string> employeeIDs = model.EmployeeIDs.Split(',').ToList();
 				int empIndex = -1;
 
+				List<CallStatus> callStatuses = _db.CallStatuses.ToList();
+
+
 				foreach (GSMExcel gsmExcel in gsmExcelList)
 				{
 					if (empIndex == employeeIDs.Count - 1)
@@ -439,13 +444,16 @@ namespace TelemarketingControlSystem.Services.Projects
 						Contract = gsmExcel.Contract,
 						SubSegment = gsmExcel.SubSegment,
 						Segment = gsmExcel.Segment,
+
 						ProjectId = createdProjectId,
 						EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex)),
-						RegionId = gsmExcel.Region is not null ? regions.IndexOf(gsmExcel.Region) + 1 : null,
-						LineTypeId = gsmExcel.LineType is not null ? lineTypes.IndexOf(gsmExcel.LineType) + 1 : null,
-						CityId = gsmExcel.City is not null ? cities.IndexOf(gsmExcel.City) + 1 : null,
-						CallStatusId = gsmExcel.CallStatus is not null ? _db.CallStatuses.SingleOrDefault(e => e.Name == gsmExcel.CallStatus).Id : 0,
-						GenerationId = gsmExcel.Generation is not null ? generations.IndexOf(gsmExcel.Generation) + 1 : null
+
+						GenerationId = string.IsNullOrEmpty(gsmExcel.Generation) ? 1 : generations.IndexOf(gsmExcel.Generation),
+						LineTypeId = string.IsNullOrEmpty(gsmExcel.LineType) ? 1 : lineTypes.IndexOf(gsmExcel.LineType),
+						CityId = string.IsNullOrEmpty(gsmExcel.City) ? 1 : cities.IndexOf(gsmExcel.City),
+						RegionId = string.IsNullOrEmpty(gsmExcel.Region) ? 1 : regions.IndexOf(gsmExcel.Region),
+
+						CallStatusId = string.IsNullOrEmpty(gsmExcel.CallStatus) ? 1 : callStatuses.SingleOrDefault(e => e.Name == gsmExcel.CallStatus).Id
 					};
 
 					_db.ProjectDetails.Add(projectDetail);
@@ -464,60 +472,60 @@ namespace TelemarketingControlSystem.Services.Projects
 				return new ResultWithMessage(null, ex.Message);
 			}
 		}
-		public async Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData)
-		{
-			Project projectToUpdate = await _db.Projects
-				.Include(e => e.ProjectDetails.Where(x => model.ProjectDetails.Select(e => e.Id).Contains(x.Id)).OrderBy(e => e.Id))
-				.SingleOrDefaultAsync(e => e.Id == model.Id);
-			if (projectToUpdate is null)
-				return new ResultWithMessage(null, $"Invalid Project ID: {model.Id}");
+		//public async Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData)
+		//{
+		//	Project projectToUpdate = await _db.Projects
+		//		.Include(e => e.ProjectDetails.Where(x => model.ProjectDetails.Select(e => e.Id).Contains(x.Id)).OrderBy(e => e.Id))
+		//		.SingleOrDefaultAsync(e => e.Id == model.Id);
+		//	if (projectToUpdate is null)
+		//		return new ResultWithMessage(null, $"Invalid Project ID: {model.Id}");
 
-			string modelErrorMessage = await validateUpdateProjectViewModel(model);
-			if (!string.IsNullOrEmpty(modelErrorMessage))
-				return new ResultWithMessage(null, modelErrorMessage);
+		//	string modelErrorMessage = await validateUpdateProjectViewModel(model);
+		//	if (!string.IsNullOrEmpty(modelErrorMessage))
+		//		return new ResultWithMessage(null, modelErrorMessage);
 
-			var transaction = _db.Database.BeginTransaction();
-			try
-			{
-				if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-				{
-					projectToUpdate.Name = model.Name;
-					projectToUpdate.DateFrom = model.DateFrom;
-					projectToUpdate.DateTo = model.DateTo;
-					projectToUpdate.Quota = model.Quota;
-					projectToUpdate.TypeId = model.TypeId;
-					projectToUpdate.LastUpdatedBy = authData.userName;
-					projectToUpdate.LastUpdateDate = DateTime.Now;
-				}
+		//	var transaction = _db.Database.BeginTransaction();
+		//	try
+		//	{
+		//		if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+		//		{
+		//			projectToUpdate.Name = model.Name;
+		//			projectToUpdate.DateFrom = model.DateFrom;
+		//			projectToUpdate.DateTo = model.DateTo;
+		//			projectToUpdate.Quota = model.Quota;
+		//			projectToUpdate.TypeId = model.TypeId;
+		//			projectToUpdate.LastUpdatedBy = authData.userName;
+		//			projectToUpdate.LastUpdateDate = DateTime.Now;
+		//		}
 
-				// update project details
-				if (model.ProjectDetails.Count > 0)
-				{
-					model.ProjectDetails = model.ProjectDetails.OrderBy(e => e.Id).ToList();
-					for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
-					{
-						if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-							projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
+		//		// update project details
+		//		if (model.ProjectDetails.Count > 0)
+		//		{
+		//			model.ProjectDetails = model.ProjectDetails.OrderBy(e => e.Id).ToList();
+		//			for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
+		//			{
+		//				if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+		//					projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
 
-						projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
-						projectToUpdate.ProjectDetails.ElementAt(i).CallStatusId = model.ProjectDetails.ElementAt(i).CallStatusId;
-						projectToUpdate.ProjectDetails.ElementAt(i).LastUpdatedBy = authData.userName;
-						projectToUpdate.ProjectDetails.ElementAt(i).LastUpdateDate = DateTime.Now;
-					}
-				}
+		//				projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
+		//				projectToUpdate.ProjectDetails.ElementAt(i).CallStatusId = model.ProjectDetails.ElementAt(i).CallStatusId;
+		//				projectToUpdate.ProjectDetails.ElementAt(i).LastUpdatedBy = authData.userName;
+		//				projectToUpdate.ProjectDetails.ElementAt(i).LastUpdateDate = DateTime.Now;
+		//			}
+		//		}
 
-				_db.Update(projectToUpdate);
-				_db.SaveChanges();
-				transaction.Commit();
+		//		_db.Update(projectToUpdate);
+		//		_db.SaveChanges();
+		//		transaction.Commit();
 
-				return new ResultWithMessage(null, string.Empty);
-			}
-			catch (Exception e)
-			{
-				transaction.Rollback();
-				return new ResultWithMessage(null, e.Message);
-			}
-		}
+		//		return new ResultWithMessage(null, string.Empty);
+		//	}
+		//	catch (Exception e)
+		//	{
+		//		transaction.Rollback();
+		//		return new ResultWithMessage(null, e.Message);
+		//	}
+		//}
 		public async Task<ResultWithMessage> delete(int id, TenantDto authData)
 		{
 			Project project = await _db.Projects.Include(e => e.ProjectDetails).SingleOrDefaultAsync(e => e.Id == id);

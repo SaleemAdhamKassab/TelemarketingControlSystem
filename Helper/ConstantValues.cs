@@ -9,10 +9,9 @@
 		public enum enRoles { Admin, Telemarketer, Researcher }
 
 		public static List<string> projectTypes = ["RS", "SG", "TM"];
-		public static List<string> lineTypes = ["Pre", "Post"];
-		public static List<string> regions = ["Central", "Coastal", "Eastern", "Northern", "Southern"];
-		public static List<string> cities = ["Aleppo", "Damascus", "Damascus Rural", "Deir Alzor", "Hama", "Hasakeh", "Homs", "Idleb", "Kounaitra", "Latakia", "Raqa", "Sweida", "Tartous"];
-		//public static List<string> callStatuses = ["Initialize", "Completed", "InComplete", "No Answer", "Number is Not Exist", "Out of Coverage", "Quota (Out of Quota)", "Refused to Cooperate", "Canceled", "F1", "F2", "F3", "F4", "Informed", "Done", "Subscribed", "Don't Have Alternative Number", "Subscribed On Another Number", "Service Out", "Another User", "Done - No modification", "N/A"];
-		public static List<string> generations = ["2G", "3G", "4G"];
+		public static List<string> generations = ["", "N/A", "2G", "3G", "4G"];
+		public static List<string> lineTypes = ["", "N/A", "Pre", "Post"];
+		public static List<string> cities = ["", "N/A", "Aleppo", "Damascus", "Damascus Rural", "Deir Alzor", "Hama", "Hasakeh", "Homs", "Idleb", "Kounaitra", "Latakia", "Raqa", "Sweida", "Tartous"];
+		public static List<string> regions = ["", "N/A", "Central", "Coastal", "Eastern", "Northern", "Southern"];
 	}
 }

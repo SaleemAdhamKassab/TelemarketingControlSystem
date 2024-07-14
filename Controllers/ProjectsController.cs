@@ -73,10 +73,10 @@ namespace TelemarketingControlSystem.Controllers
 		[DisableRequestSizeLimit]
 		public async Task<IActionResult> create([FromForm] CreateProjectViewModel model) => _returnResultWithMessage(await _projectService.create(model, authData()));
 
-		[HttpPut("update")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-		[DisableRequestSizeLimit]
-		public async Task<IActionResult> update(UpdateProjectViewModel model) => _returnResultWithMessage(await _projectService.update(model, authData()));
+		//[HttpPut("update")]
+		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		//[DisableRequestSizeLimit]
+		//public async Task<IActionResult> update(UpdateProjectViewModel model) => _returnResultWithMessage(await _projectService.update(model, authData()));
 
 		[HttpDelete("delete")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
