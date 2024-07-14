@@ -112,30 +112,38 @@ namespace TelemarketingControlSystem.Services.Projects
 			  CreatedBy = e.CreatedBy
 		  });
 
-		private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model) =>
-		  model.Select(e => new ProjectDetailViewModel
-		  {
-			  Id = e.Id,
-			  AlternativeNumber = e.AlternativeNumber,
-			  EmployeeUserName = e.Employee.UserName,
-			  EmployeeID = e.EmployeeId,
-			  Bundle = e.Bundle,
-			  CallStatusId = e.CallStatusId,
-			  CallStatus ="callStatus",
-			  CityId = e.CityId,
-			  City = "City",
-			  Contract = e.Contract,
-			  GenerationId = e.GenerationId,
-			  Generation = "generation",
-			  GSM = e.GSM,
-			  LineTypeId = e.LineTypeId,
-			  LineType = "lineType",
-			  Note = e.Note,
-			  Region = "region",
-			  RegionId = e.RegionId,
-			  Segment = e.Segment,
-			  SubSegment = e.SubSegment
-		  });
+		private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
+		{
+
+			var x = 5;
+
+
+
+			return model.Select(e => new ProjectDetailViewModel
+			{
+				Id = e.Id,
+				AlternativeNumber = e.AlternativeNumber,
+				EmployeeUserName = e.Employee.UserName,
+				EmployeeID = e.EmployeeId,
+				Bundle = e.Bundle,
+				CallStatusId = e.CallStatusId,
+				CallStatus = e.CallStatusId != null && e.CallStatusId != 0 ? callStatuses[e.CallStatusId.Value - 1] : "N/A",
+				CityId = e.CityId,
+				//City = (int)e.CityId != 0 ? cities.ElementAt((int)e.CityId - 1) : string.Empty,
+				Contract = e.Contract,
+				GenerationId = e.GenerationId,
+				//Generation = (int)e.GenerationId != 0 ? generations.ElementAt((int)e.GenerationId - 1) : string.Empty,
+				GSM = e.GSM,
+				LineTypeId = e.LineTypeId,
+				//LineType = (int)e.LineTypeId != 0 ? lineTypes.ElementAt((int)e.LineTypeId - 1) : string.Empty,
+				Note = e.Note,
+				//Region = (int)e.RegionId != 0 ? regions.ElementAt((int)e.RegionId - 1) : string.Empty,
+				RegionId = e.RegionId,
+				Segment = e.Segment,
+				SubSegment = e.SubSegment
+			});
+		}
+
 
 
 		private async Task<string> validateCreateProjectViewModel(CreateProjectViewModel model)
@@ -349,7 +357,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				ProjectDetails = resultData
 			};
 
-			return new ResultWithMessage(model, string.Empty);
+			return new ResultWithMessage(new DataWithSize(resultSize, model), string.Empty);
 		}
 
 		public ResultWithMessage getByFilter(ProjectFilterModel filter, TenantDto authData)
