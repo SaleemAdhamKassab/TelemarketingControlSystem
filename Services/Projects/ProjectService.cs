@@ -12,6 +12,7 @@ using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -24,7 +25,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		ResultWithMessage getCallStatuses();
 		ResultWithMessage getLineGenerations();
 		ResultWithMessage getEmployees();
-		ResultWithMessage getById(int id, TenantDto authData);
+		ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData);
 		ResultWithMessage getByFilter(ProjectFilterModel model, TenantDto authData);
 		Task<ResultWithMessage> create(CreateProjectViewModel model, TenantDto authData);
 		Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
@@ -78,6 +79,26 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return query;
 		}
+		private IQueryable<ProjectDetail> getProjectDetailsData(ProjectFilterModel filter, TenantDto authData)
+		{
+			IQueryable<ProjectDetail> query;
+
+			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+				query = _db.ProjectDetails.Where(e => !e.IsDeleted);
+			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
+			{
+				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
+				query = _db.ProjectDetails.Where(e => e.EmployeeId == employee.Id && !e.IsDeleted);
+			}
+
+			else
+				return null;
+
+			if (!string.IsNullOrEmpty(filter.SearchQuery))
+				query = query.Where(e => e.GSM.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
+
+			return query;
+		}
 		private IQueryable<ProjectViewModel> convertProjectsToListViewModel(IQueryable<Project> model) =>
 		  model.Select(e => new ProjectViewModel
 		  {
@@ -90,6 +111,33 @@ namespace TelemarketingControlSystem.Services.Projects
 			  Type = projectTypes.ElementAt(e.TypeId - 1),
 			  CreatedBy = e.CreatedBy
 		  });
+
+		private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model) =>
+		  model.Select(e => new ProjectDetailViewModel
+		  {
+			  Id = e.Id,
+			  AlternativeNumber = e.AlternativeNumber,
+			  EmployeeUserName = e.Employee.UserName,
+			  EmployeeID = e.EmployeeId,
+			  Bundle = e.Bundle,
+			  CallStatusId = e.CallStatusId,
+			  CallStatus ="callStatus",
+			  CityId = e.CityId,
+			  City = "City",
+			  Contract = e.Contract,
+			  GenerationId = e.GenerationId,
+			  Generation = "generation",
+			  GSM = e.GSM,
+			  LineTypeId = e.LineTypeId,
+			  LineType = "lineType",
+			  Note = e.Note,
+			  Region = "region",
+			  RegionId = e.RegionId,
+			  Segment = e.Segment,
+			  SubSegment = e.SubSegment
+		  });
+
+
 		private async Task<string> validateCreateProjectViewModel(CreateProjectViewModel model)
 		{
 			Project project = await _db.Projects.SingleOrDefaultAsync(e => e.Name.ToLower() == model.Name.Trim().ToLower() && !e.IsDeleted);
@@ -242,27 +290,51 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return new ResultWithMessage(employees, string.Empty);
 		}
-		public ResultWithMessage getById(int id, TenantDto authData)
+		public ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData)
 		{
-			Project project = new();
+			//Project project = new();
 
-			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-			{
-				project = _db.Projects.Include(e => e.ProjectDetails)
-										  .ThenInclude(e => e.Employee)
-										  .Where(e => e.Id == id && !e.IsDeleted).FirstOrDefault();
-			}
-			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
-			{
-				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
+			//if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+			//{
+			//	project = _db.Projects.Include(e => e.ProjectDetails)
+			//							  .ThenInclude(e => e.Employee)
+			//							  .Where(e => e.Id == id && !e.IsDeleted).FirstOrDefault();
+			//}
+			//else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
+			//{
+			//	Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
 
-				project = _db.Projects.Include(e => e.ProjectDetails.Where(e => e.EmployeeId == employee.Id))
-										  .ThenInclude(e => e.Employee)
-										  .Where(e => e.Id == id && e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted).FirstOrDefault();
-			}
+			//	project = _db.Projects.Include(e => e.ProjectDetails.Where(e => e.EmployeeId == employee.Id))
+			//							  .ThenInclude(e => e.Employee)
+			//							  .Where(e => e.Id == id && e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted).FirstOrDefault();
+			//}
 
+			Project project = _db.Projects.Find(id);
 			if (project is null)
 				return new ResultWithMessage(null, $"The project with ID: {id} is not Exists");
+
+
+			//1- Apply Filters just search query
+			var query = getProjectDetailsData(filter, authData);
+
+			//2- Generate List View Model
+			var queryViewModel = convertProjectDetailToListViewModel(query);
+
+			//3- Sorting using our extension
+			filter.SortActive = filter.SortActive == string.Empty ? "ID" : filter.SortActive;
+
+			if (filter.SortDirection == enSortDirection.desc.ToString())
+				queryViewModel = queryViewModel.OrderByDescending(filter.SortActive);
+			else
+				queryViewModel = queryViewModel.OrderBy(filter.SortActive);
+
+
+			//4- pagination
+			int resultSize = queryViewModel.Count();
+			var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
+
+			//5- return 
+			//return new ResultWithMessage(new DataWithSize(resultSize, resultData), "");
 
 			ProjectViewModel model = new()
 			{
@@ -274,39 +346,12 @@ namespace TelemarketingControlSystem.Services.Projects
 				TypeId = project.TypeId,
 				Type = projectTypes.ElementAt(project.TypeId - 1),
 				CreatedBy = project.CreatedBy,
-
-				ProjectDetails = project.ProjectDetails.Select(e => new ProjectDetailViewModel()
-				{
-					Id = e.Id,
-					GSM = e.GSM,
-					AlternativeNumber = e.AlternativeNumber,
-					Bundle = e.Bundle,
-					Note = e.Note,
-					Contract = e.Contract,
-					Segment = e.Segment,
-					SubSegment = e.SubSegment,
-					EmployeeID = e.EmployeeId,
-					EmployeeUserName = e.Employee.UserName,
-
-					LineTypeId = e.LineTypeId != 0 ? e.LineTypeId : null,
-					LineType = e.LineTypeId != 0 ? lineTypes.ElementAt(int.Parse(e.LineTypeId.ToString()) - 1) : null,
-
-					GenerationId = e.GenerationId != 0 ? e.GenerationId : null,
-					Generation = e.GenerationId != 0 ? generations.ElementAt(int.Parse(e.GenerationId.ToString()) - 1) : null,
-
-					RegionId = e.RegionId != 0 ? e.RegionId : null,
-					Region = e.RegionId != 0 ? regions.ElementAt((int)e.RegionId - 1) : null,
-
-					CityId = e.CityId != 0 ? e.CityId : null,
-					City = e.CityId != 0 ? cities.ElementAt((int)e.CityId - 1) : null,
-
-					CallStatusId = e.CallStatusId != 0 ? e.CallStatusId : null,
-					CallStatus = e.CallStatusId != 0 ? callStatuses.ElementAt((int)e.CallStatusId - 1) : null
-				}).ToList()
+				ProjectDetails = resultData
 			};
 
 			return new ResultWithMessage(model, string.Empty);
 		}
+
 		public ResultWithMessage getByFilter(ProjectFilterModel filter, TenantDto authData)
 		{
 			//1- Apply Filters just search query
@@ -342,9 +387,24 @@ namespace TelemarketingControlSystem.Services.Projects
 
 				string filePath = saveFile(model.GSMsFile);
 				List<GSMExcel> gsmExcelList = ExcelHelper.Import<GSMExcel>(filePath);
+
 				string validateGsmExcelErrorMessage = validateGSMsExcelFile(model.GSMsFile, gsmExcelList, model.Quota);
 				if (!string.IsNullOrEmpty(validateGsmExcelErrorMessage))
 					return new ResultWithMessage(null, validateGsmExcelErrorMessage);
+
+				var nullGsm = gsmExcelList.Select((z, i) => new { z.GSM, i }).FirstOrDefault(e => e.GSM == null);
+				if (nullGsm != null)
+					return new ResultWithMessage(null, $"Empty GSM at row {nullGsm.i}");
+
+				var duplication = gsmExcelList.GroupBy(x => x.GSM).Select(z => new
+				{
+					z.Key,
+					count = z.Count()
+				}).FirstOrDefault(y => y.count > 1);
+
+				if (duplication != null)
+					return new ResultWithMessage(null, $"Duplicate GSM {duplication.Key}");
+
 
 				int createdProjectId = await getCreatedProjectId(model, authData);
 				if (createdProjectId < 0)
@@ -390,7 +450,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				await pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project");
 				transaction.Commit();
 
-				return getById(createdProjectId, authData);
+				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception ex)
 			{
@@ -444,7 +504,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.SaveChanges();
 				transaction.Commit();
 
-				return getById(model.Id, authData);
+				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception e)
 			{
@@ -525,7 +585,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.SaveChanges();
 				//---------------------Send Notification--------------------------
 				await pushNotification(projectId, project.Name, employeeIDs, project.Name + " has been redistributed", "redistributed project");
-				return getById(projectId, authData);
+				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception e)
 			{
@@ -551,7 +611,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 				_db.Update(projectDetailToUpdate);
 				_db.SaveChanges();
-				return getById(projectDetailToUpdate.ProjectId, authData);
+				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception e)
 			{
