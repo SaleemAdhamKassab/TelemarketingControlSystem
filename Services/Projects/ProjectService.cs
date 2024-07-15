@@ -29,7 +29,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData);
 		ResultWithMessage getByFilter(ProjectFilterModel model, TenantDto authData);
 		Task<ResultWithMessage> create(CreateProjectViewModel model, TenantDto authData);
-		//Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
+		Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
 		Task<ResultWithMessage> delete(int id, TenantDto authData);
 		Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
 		Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
@@ -225,14 +225,14 @@ namespace TelemarketingControlSystem.Services.Projects
 			return project.Id;
 		}
 
-		private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title)
+		private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title ,string createdBy)
 		{
 			List<string> userNames = _db.Employees.Where(x => userIds.Contains(x.Id.ToString())).Select(x => x.UserName).ToList();
 
 			foreach (string s in userNames)
 			{
 				var client = _db.HubClients.FirstOrDefault(x => x.userName == s);
-				Notification not = new Notification(title, projectId, msg, s, client != null ? client.connectionId : null, _config["ProfileImg"].Replace("VarXXX", s.Substring(s.IndexOf("\\") + 1)));
+				Notification not = new Notification(title, projectId, msg, s, client != null ? client.connectionId : null, _config["ProfileImg"].Replace("VarXXX", s.Substring(createdBy.IndexOf("\\") + 1)));
 				_db.Notifications.Add(not);
 				_db.SaveChanges();
 				if (client != null && !string.IsNullOrEmpty(client.connectionId))
@@ -461,7 +461,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
 				_db.SaveChanges();
 				//---------------------Send Notification--------------------------
-				await pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project");
+				await pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project",authData.userName);
 				transaction.Commit();
 
 				return new ResultWithMessage(null, string.Empty);
@@ -472,60 +472,64 @@ namespace TelemarketingControlSystem.Services.Projects
 				return new ResultWithMessage(null, ex.Message);
 			}
 		}
-		//public async Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData)
-		//{
-		//	Project projectToUpdate = await _db.Projects
-		//		.Include(e => e.ProjectDetails.Where(x => model.ProjectDetails.Select(e => e.Id).Contains(x.Id)).OrderBy(e => e.Id))
-		//		.SingleOrDefaultAsync(e => e.Id == model.Id);
-		//	if (projectToUpdate is null)
-		//		return new ResultWithMessage(null, $"Invalid Project ID: {model.Id}");
+		public async Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData)
+		{
+			//Project projectToUpdate = await _db.Projects
+			//	.Include(e => e.ProjectDetails
+			//	.Where(x => model.ProjectDetails.Select(e => e.Id).Contains(x.Id)).OrderBy(e => e.Id))
+			//	.SingleOrDefaultAsync(e => e.Id == model.Id);
 
-		//	string modelErrorMessage = await validateUpdateProjectViewModel(model);
-		//	if (!string.IsNullOrEmpty(modelErrorMessage))
-		//		return new ResultWithMessage(null, modelErrorMessage);
+			Project projectToUpdate = await _db.Projects.FindAsync(model.Id);
 
-		//	var transaction = _db.Database.BeginTransaction();
-		//	try
-		//	{
-		//		if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-		//		{
-		//			projectToUpdate.Name = model.Name;
-		//			projectToUpdate.DateFrom = model.DateFrom;
-		//			projectToUpdate.DateTo = model.DateTo;
-		//			projectToUpdate.Quota = model.Quota;
-		//			projectToUpdate.TypeId = model.TypeId;
-		//			projectToUpdate.LastUpdatedBy = authData.userName;
-		//			projectToUpdate.LastUpdateDate = DateTime.Now;
-		//		}
+			if (projectToUpdate is null)
+				return new ResultWithMessage(null, $"Invalid Project ID: {model.Id}");
 
-		//		// update project details
-		//		if (model.ProjectDetails.Count > 0)
-		//		{
-		//			model.ProjectDetails = model.ProjectDetails.OrderBy(e => e.Id).ToList();
-		//			for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
-		//			{
-		//				if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-		//					projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
+			string modelErrorMessage = await validateUpdateProjectViewModel(model);
+			if (!string.IsNullOrEmpty(modelErrorMessage))
+				return new ResultWithMessage(null, modelErrorMessage);
 
-		//				projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
-		//				projectToUpdate.ProjectDetails.ElementAt(i).CallStatusId = model.ProjectDetails.ElementAt(i).CallStatusId;
-		//				projectToUpdate.ProjectDetails.ElementAt(i).LastUpdatedBy = authData.userName;
-		//				projectToUpdate.ProjectDetails.ElementAt(i).LastUpdateDate = DateTime.Now;
-		//			}
-		//		}
+			//var transaction = _db.Database.BeginTransaction();
+			try
+			{
+				if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+				{
+					projectToUpdate.Name = model.Name;
+					projectToUpdate.DateFrom = model.DateFrom;
+					projectToUpdate.DateTo = model.DateTo;
+					projectToUpdate.Quota = model.Quota;
+					projectToUpdate.TypeId = model.TypeId;
+					projectToUpdate.LastUpdatedBy = authData.userName;
+					projectToUpdate.LastUpdateDate = DateTime.Now;
+				}
 
-		//		_db.Update(projectToUpdate);
-		//		_db.SaveChanges();
-		//		transaction.Commit();
+				// update project details
+				//if (model.ProjectDetails.Count > 0)
+				//{
+				//	model.ProjectDetails = model.ProjectDetails.OrderBy(e => e.Id).ToList();
+				//	for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
+				//	{
+				//		if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+				//			projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
 
-		//		return new ResultWithMessage(null, string.Empty);
-		//	}
-		//	catch (Exception e)
-		//	{
-		//		transaction.Rollback();
-		//		return new ResultWithMessage(null, e.Message);
-		//	}
-		//}
+				//		projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
+				//		projectToUpdate.ProjectDetails.ElementAt(i).CallStatusId = model.ProjectDetails.ElementAt(i).CallStatusId;
+				//		projectToUpdate.ProjectDetails.ElementAt(i).LastUpdatedBy = authData.userName;
+				//		projectToUpdate.ProjectDetails.ElementAt(i).LastUpdateDate = DateTime.Now;
+				//	}
+				//}
+
+				_db.Update(projectToUpdate);
+				_db.SaveChanges();
+				//transaction.Commit();
+
+				return new ResultWithMessage(null, string.Empty);
+			}
+			catch (Exception e)
+			{
+				//transaction.Rollback();
+				return new ResultWithMessage(null, e.Message);
+			}
+		}
 		public async Task<ResultWithMessage> delete(int id, TenantDto authData)
 		{
 			Project project = await _db.Projects.Include(e => e.ProjectDetails).SingleOrDefaultAsync(e => e.Id == id);
@@ -598,7 +602,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.ProjectDetails.UpdateRange(project.ProjectDetails);
 				_db.SaveChanges();
 				//---------------------Send Notification--------------------------
-				await pushNotification(projectId, project.Name, employeeIDs, project.Name + " has been redistributed", "redistributed project");
+				await pushNotification(projectId, project.Name, employeeIDs, project.Name + " has been redistributed", "redistributed project",authData.userName);
 				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception e)
