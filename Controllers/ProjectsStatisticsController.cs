@@ -37,6 +37,6 @@ namespace TelemarketingControlSystem.Controllers
 
 		[HttpGet("getProjectStatistics")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-		public IActionResult projectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
+		public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
 	}
 }

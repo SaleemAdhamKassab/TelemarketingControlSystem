@@ -161,7 +161,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		}
 		private async Task<string> validateUpdateProjectViewModel(UpdateProjectViewModel model)
 		{
-			if (model.DateFrom >= model.DateTo)
+			if (model.DateFrom > model.DateTo)
 				return "Project End Date Should be greater than Start Date";
 
 			int projectGSMs = _db.ProjectDetails.Where(e => e.ProjectId == model.Id).Count();
@@ -225,7 +225,7 @@ namespace TelemarketingControlSystem.Services.Projects
 			return project.Id;
 		}
 
-		private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title ,string createdBy)
+		private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title, string createdBy)
 		{
 			List<string> userNames = _db.Employees.Where(x => userIds.Contains(x.Id.ToString())).Select(x => x.UserName).ToList();
 
@@ -460,11 +460,11 @@ namespace TelemarketingControlSystem.Services.Projects
 				};
 
 				_db.SaveChanges();
-                //---------------------Send Notification--------------------------
-                transaction.Commit();
+				//---------------------Send Notification--------------------------
+				transaction.Commit();
 
-                pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project",authData.userName);
-				 
+				pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project", authData.userName);
+
 				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception ex)
@@ -603,7 +603,7 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.ProjectDetails.UpdateRange(project.ProjectDetails);
 				_db.SaveChanges();
 				//---------------------Send Notification--------------------------
-				 pushNotification(projectId, project.Name, employeeIDs, project.Name + " has been redistributed", "redistributed project",authData.userName);
+				pushNotification(projectId, project.Name, employeeIDs, project.Name + " has been redistributed", "redistributed project", authData.userName);
 				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception e)

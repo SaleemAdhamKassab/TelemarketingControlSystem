@@ -12,6 +12,8 @@ namespace TelemarketingControlSystem.Models.Data
 		public DbSet<ProjectDetail> ProjectDetails { get; set; }
 		public DbSet<Project> Projects { get; set; }
 		public DbSet<CallStatus> CallStatuses { get; set; }
+		public DbSet<EmployeeCall> EmployeeCalls { get; set; }
+
 
 		//Auth Models
 		public DbSet<AccessLog> AccessLogs { get; set; }
