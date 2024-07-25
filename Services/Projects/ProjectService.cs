@@ -460,9 +460,8 @@ namespace TelemarketingControlSystem.Services.Projects
 				};
 
 				_db.SaveChanges();
-				//---------------------Send Notification--------------------------
 				transaction.Commit();
-
+				//---------------------Send Notification--------------------------
 				pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project", authData.userName);
 
 				return new ResultWithMessage(null, string.Empty);

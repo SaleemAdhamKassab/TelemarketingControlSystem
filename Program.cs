@@ -9,6 +9,7 @@ using TelemarketingControlSystem.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using TelemarketingControlSystem.Services.NotificationHub;
 using TelemarketingControlSystem.Services.ProjectStatistics;
+using TelemarketingControlSystem.Helper.ExceptionHandling;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
@@ -86,6 +87,7 @@ app.UseSwaggerUI();
 //}
 
 app.UseCors("CorsPolicy");
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();

@@ -26,8 +26,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 		{
 			public string Telemarketer { get; set; }
 			public int AssignedGSMs { get; set; }
-			public int Closed { get; set; }
 			public int Completed { get; set; }
+			public int Closed { get; set; }
 			public double CompletedRate { get; set; }
 			public double ClosedRate { get; set; }
 		}
@@ -35,6 +35,20 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 		{
 			public DateTime Date { get; set; }
 			public int Count { get; set; }
+		}
+		public class HourlyTelemarketerTargetViewModel
+		{
+			public double AverageCompletedCalls { get; set; }
+			public List<HourlyTelemarketerTargetCallStatusViewModel> Data { get; set; }
+		}
+		public class HourlyTelemarketerTargetCallStatusViewModel
+		{
+			public string Status { get; set; }
+			public double TotalMinutes { get; set; }
+			public double HourPercentage { get; set; }
+			public double Rate { get; set; }
+			public double Target { get; set; }
+
 		}
 	}
 }

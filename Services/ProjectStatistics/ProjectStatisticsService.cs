@@ -11,134 +11,41 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 	public interface IProjectStatisticsService
 	{
 		ResultWithMessage getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo, TenantDto authData);
+		ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, TimeOnly targetTime);
 	}
-	public class ProjectStatisticsService : IProjectStatisticsService
+	public class ProjectStatisticsService(ApplicationDbContext db) : IProjectStatisticsService
 	{
-		private readonly ApplicationDbContext _db;
-		public ProjectStatisticsService(ApplicationDbContext db) => _db = db;
-
-		private List<CardViewModel> getProjectGeneralDetails(Project project)
-		{
-			List<CardViewModel> result = [];
-
-			result.Add(new CardViewModel()
-			{
-				Category = "Actual Completion",
-				//Count = project.ProjectDetails.Where(e => e.CallStatusId == ConstantValues.callStatuses.IndexOf("Completed")).Count(),
-				Count = -1,
-				Total = project.ProjectDetails.Count,
-			});
-
-			result.Add(new CardViewModel()
-			{
-				Category = "Actual Non-Completion",
-				Count = result.ElementAt(0).Total - result.ElementAt(0).Count,
-				Total = result.ElementAt(0).Total,
-			});
-
-			result.Add(new CardViewModel()
-			{
-				Category = "Quota Progress",
-				Count = result.ElementAt(0).Count,
-				Total = project.Quota,
-			});
-
-			result.Add(new CardViewModel()
-			{
-				Category = "Telemarketer Count",
-				Count = project.ProjectDetails.Select(e => e.EmployeeId).Distinct().Count(),
-				Total = _db.Employees.Count()
-			});
-
-			return result;
-		}
-		private List<CardViewModel> getCallStatuses(Project project)
-		{
-			List<CardViewModel> result = [];
-			result = _db.CallStatuses
-					 .GroupBy(g => g)
-					 .Select(e => new CardViewModel
-					 {
-						 Category = e.Key.Name,
-						 //Count = project.ProjectDetails.Where(x => x.CallStatusId == ConstantValues.callStatuses.IndexOf(e.Key)).Count(),
-						 Count = -1,
-						 Total = 0
-					 }).ToList();
-
-			return result;
-		}
-		private List<CardViewModel> getTelemarketersProductivity(Project project)
-		{
-			List<CardViewModel> result = [];
-
-			result = project.ProjectDetails
-					.GroupBy(e => e.Employee.UserName)
-					.Select(e => new CardViewModel
-					{
-						Category = e.Key,
-						Count = 0,
-						Total = 0
-					}).ToList();
-
-			return result;
-		}
-		private List<CompletedQuotaPerDay> getCompletedQuotaPerDay(Project project)
-		{
-			List<CompletedQuotaPerDay> result = [];
-
-			//result = project.ProjectDetails
-			//	.Where(e => e.CallStatusId == ConstantValues.callStatuses.IndexOf("Completed"))
-			//	.GroupBy(g => DateOnly.FromDateTime(g.LastUpdateDate.GetValueOrDefault()))
-			//	.Select(e => new CompletedQuotaPerDay
-			//	{
-			//		Date = e.Key,
-			//		Count = e.Count()
-			//	}).ToList();
-
-			return result;
-		}
-
-		private List<TelemarketerProductivityCardViewModel> getTelemarketerProductivities()
-		{
-			List<TelemarketerProductivityCardViewModel> result = [];
-
-
-
-
-
-			return result;
-		}
+		private readonly ApplicationDbContext _db = db;
 
 		public ResultWithMessage getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo, TenantDto authData)
 		{
+
 			var mainObj = _db.ProjectDetails
-				.Include(e => e.Project)
-				.Include(e => e.CallStatus)
-				.Include(e => e.Employee)
-				.Where(e => e.ProjectId == projectId)
-				.GroupBy(g => new
-				{
-					projectName = g.Project.Name,
-					addedOn = g.Project.AddedOn,
-					createdBy = g.Project.CreatedBy,
-					telemarketer = g.Employee.UserName,
-					callStatus = g.CallStatus.Name,
-					quota = g.Project.Quota
-				})
-				.Select(e => new
-				{
-					ProjectName = e.Key.projectName,
-					AddedOn = e.Key.addedOn,
-					CreatedBy = e.Key.createdBy,
-					Telemarketer = e.Key.telemarketer,
-					CallStatus = e.Key.callStatus,
-					Quota = e.Key.quota,
-					AssignedGsms = e.Count()
-				})
-				.ToList();
+			.Include(e => e.Project)
+			.Include(e => e.CallStatus)
+			.Include(e => e.Employee)
+			.Where(e => e.ProjectId == projectId)
+			.GroupBy(g => new
+			{
+				projectName = g.Project.Name,
+				addedOn = g.Project.AddedOn,
+				createdBy = g.Project.CreatedBy,
+				telemarketer = g.Employee.UserName,
+				callStatus = g.CallStatus.Name,
+				quota = g.Project.Quota
+			})
+			.Select(e => new
+			{
+				ProjectName = e.Key.projectName,
+				AddedOn = e.Key.addedOn,
+				CreatedBy = e.Key.createdBy,
+				Telemarketer = e.Key.telemarketer,
+				CallStatus = e.Key.callStatus,
+				Quota = e.Key.quota,
+				AssignedGsms = e.Count()
+			}).ToList();
 
-
-			if (mainObj is null)
+			if (mainObj.Count == 0)
 				return new ResultWithMessage(null, "No Data Found");
 
 			//////1) GeneralDetails
@@ -146,8 +53,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 			int closedGSMs = mainObj.Where(e => e.CallStatus == "Completed").Select(e => e.AssignedGsms).Sum();
 			int telemarketerCount = mainObj.Select(e => e.Telemarketer).Distinct().Count();
 
-			//////2) GSMSCountPerCallStatues
-			List<CardViewModel> gsmsCountPerCallStatues = mainObj
+			//////2) GSMSCountPerCallStatus
+			List<CardViewModel> gsmsCountPerCallStatus = mainObj
 				.GroupBy(g => g.CallStatus)
 				.Select(e => new CardViewModel
 				{
@@ -165,8 +72,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 					Closed = e.Count(e => e.CallStatus == "Completed"),
 					Completed = e.Count(e => e.CallStatus == "Completed"),
 
-					CompletedRate = Convert.ToDouble(e.Count(e => e.CallStatus == "Completed")) / Convert.ToDouble(e.Sum(e => e.AssignedGsms)),
-					ClosedRate = Convert.ToDouble(e.Count(e => e.CallStatus == "Completed")) / Convert.ToDouble(e.Sum(e => e.AssignedGsms))
+					CompletedRate = e.Count(e => e.CallStatus == "Completed") / Convert.ToDouble(e.Sum(e => e.AssignedGsms)),
+					ClosedRate = e.Count(e => e.CallStatus == "Completed") / Convert.ToDouble(e.Sum(e => e.AssignedGsms))
 				}).ToList();
 
 
@@ -192,12 +99,78 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 					new CardViewModel {Category = "Quota Progress",Count=closedGSMs,Total =mainObj[0].Quota},
 					new CardViewModel {Category = "Telemarketer",Count=telemarketerCount,Total=0}
 				],
-				CallStatuses = gsmsCountPerCallStatues,
+				CallStatuses = gsmsCountPerCallStatus,
 				TelemarketerProductivities = telemarketerProductivities,
 				CompletedQuotaPerDays = quotaProgress
 			};
 
 			return new ResultWithMessage(result, string.Empty);
+		}
+		public ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, TimeOnly targetTime)
+		{
+			targetDate.AddHours(targetTime.Hour);
+			//targetDate.AddMinutes(targetTime.Minute);
+
+			var mainObj = _db.ProjectDetails
+						.Join(
+							_db.EmployeeCalls,
+							pd => pd.EmployeeId,
+							ec => ec.EmployeeId,
+							(pd, ec) => new { pd, ec }
+						)
+						.Join(
+							_db.CallStatuses,
+							combined => combined.pd.CallStatusId,
+							c => c.Id,
+							(combined, c) => new { combined.pd, combined.ec, c }
+						)
+						.Where(x => x.pd.EmployeeId == 1
+								 && x.pd.ProjectId == 9
+								 && x.pd.GSM == x.ec.GSM
+								// && x.ec.CallStartDate == DateTime.Parse("2024-10-10 11:10:00.0000000")
+								)
+						.GroupBy(x => x.c.Name)
+						.Select(g => new
+						{
+							Name = g.Key,
+							TotalMinutes = g.Sum(x => x.ec.DurationInSeconds / 60.0),
+							Rate = g.Sum(x => x.ec.DurationInSeconds / 60.0) * 60,
+
+						})
+						.ToList();
+
+			if (mainObj.Count == 0)
+				return new ResultWithMessage(null, "No Data Found");
+
+			var totalMinutesSum = mainObj.Sum(g => g.TotalMinutes);
+			var averageCallCompleted = 11;
+
+			var hourlyTelemarketerTargetCallStatusViewModel = mainObj
+							.Select(g => new
+							{
+								status = g.Name,
+								totalMinutes = g.TotalMinutes,
+								hourPercentage = g.TotalMinutes / totalMinutesSum,
+								rate = g.Rate,
+								target = g.Rate / averageCallCompleted
+							})
+							.ToList();
+
+			HourlyTelemarketerTargetViewModel model = new()
+			{
+
+				AverageCompletedCalls = averageCallCompleted,
+				Data = hourlyTelemarketerTargetCallStatusViewModel.Select(e => new HourlyTelemarketerTargetCallStatusViewModel
+				{
+					Status = e.status,
+					TotalMinutes = e.totalMinutes,
+					HourPercentage = e.hourPercentage,
+					Rate = e.rate,
+					Target = e.target
+				}).ToList()
+			};
+
+			return new ResultWithMessage(model, string.Empty);
 		}
 	}
 }

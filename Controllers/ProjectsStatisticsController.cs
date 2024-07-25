@@ -30,13 +30,12 @@ namespace TelemarketingControlSystem.Controllers
 			return result;
 		}
 
-
-		//[HttpGet("getProjectStatistics")]
-		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-		//public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
-
 		[HttpGet("getProjectStatistics")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
 		public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
+
+		[HttpGet("hourlyTelemarketerTarget")]
+		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public IActionResult hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, TimeOnly targetTime) => _returnResultWithMessage(_projectStatisticsService.hourlyTelemarketerTarget(projectId, telemarketerId, targetDate, targetTime));
 	}
 }
