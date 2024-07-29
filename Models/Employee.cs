@@ -8,6 +8,8 @@ namespace TelemarketingControlSystem.Models
 		public int Id { get; set; }
 		[Required, MaxLength(50)]
 		public string UserName { get; set; }
+		public string FirstName { get; set; }
+		public string LastName { get; set; }
 		public int SyriatelId { get; set; }
 
 		public List<ProjectDetail> ProjectDetails { get; set; }

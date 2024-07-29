@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TelemarketingControlSystem.Models.Data;
 
@@ -11,9 +12,11 @@ using TelemarketingControlSystem.Models.Data;
 namespace TelemarketingControlSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240728200013_AddTelemarketerCallsTable")]
+    partial class AddTelemarketerCallsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -565,7 +568,7 @@ namespace TelemarketingControlSystem.Migrations
                     b.ToTable("ProjectDetails");
                 });
 
-            modelBuilder.Entity("TelemarketingControlSystem.Models.ProjectDetailCall", b =>
+            modelBuilder.Entity("TelemarketingControlSystem.Models.TelemarketerCall", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -582,14 +585,23 @@ namespace TelemarketingControlSystem.Migrations
                     b.Property<int>("DurationInSeconds")
                         .HasColumnType("int");
 
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("GSM")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("ProjectDetailId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EmployeeId");
+
                     b.HasIndex("ProjectDetailId");
 
-                    b.ToTable("ProjectDetailCalls");
+                    b.ToTable("TelemarketerCalls");
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Auth.Device", b =>
@@ -718,13 +730,21 @@ namespace TelemarketingControlSystem.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("TelemarketingControlSystem.Models.ProjectDetailCall", b =>
+            modelBuilder.Entity("TelemarketingControlSystem.Models.TelemarketerCall", b =>
                 {
+                    b.HasOne("TelemarketingControlSystem.Models.Employee", "Employee")
+                        .WithMany("TelemarketerCalls")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("TelemarketingControlSystem.Models.ProjectDetail", "ProjectDetail")
-                        .WithMany("ProjectDetailCalls")
+                        .WithMany("TelemarketerCalls")
                         .HasForeignKey("ProjectDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Employee");
 
                     b.Navigation("ProjectDetail");
                 });
@@ -769,6 +789,8 @@ namespace TelemarketingControlSystem.Migrations
                     b.Navigation("EmployeeCalls");
 
                     b.Navigation("ProjectDetails");
+
+                    b.Navigation("TelemarketerCalls");
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Project", b =>
@@ -780,7 +802,7 @@ namespace TelemarketingControlSystem.Migrations
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.ProjectDetail", b =>
                 {
-                    b.Navigation("ProjectDetailCalls");
+                    b.Navigation("TelemarketerCalls");
                 });
 #pragma warning restore 612, 618
         }

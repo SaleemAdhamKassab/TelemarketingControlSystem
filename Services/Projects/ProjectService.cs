@@ -288,7 +288,8 @@ namespace TelemarketingControlSystem.Services.Projects
 				.Select(e => new EmployeeViewModel
 				{
 					Id = e.Id,
-					UserName = e.UserName
+					//UserName = e.UserName.Substring(e.UserName.IndexOf("\\") + 1)
+					UserName = e.FirstName + " " + e.LastName
 				})
 				.OrderBy(e => e.UserName).ToList();
 
@@ -386,7 +387,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		}
 		public async Task<ResultWithMessage> create(CreateProjectViewModel model, TenantDto authData)
 		{
-			var transaction = _db.Database.BeginTransaction();
+			//var transaction = _db.Database.BeginTransaction();
 			try
 			{
 				string validateCreateProjectModelErrorMessage = await validateCreateProjectViewModel(model);
@@ -414,9 +415,21 @@ namespace TelemarketingControlSystem.Services.Projects
 					return new ResultWithMessage(null, $"Duplicate GSM {duplication.Key}");
 
 
-				int createdProjectId = await getCreatedProjectId(model, authData);
-				if (createdProjectId < 0)
-					return new ResultWithMessage(null, "Invalid Created Project ID");
+				// int createdProjectId = await getCreatedProjectId(model, authData);
+				Project project = new()
+				{
+					Name = model.Name,
+					DateFrom = model.DateFrom,
+					DateTo = model.DateTo,
+					Quota = model.Quota,
+					CreatedBy = authData.userName,
+					AddedOn = DateTime.Now,
+					TypeId = model.TypeId,
+					ProjectDetails = []
+				};
+
+				//if (createdProjectId < 0)
+				//	return new ResultWithMessage(null, "Invalid Created Project ID");
 
 				List<string> employeeIDs = model.EmployeeIDs.Split(',').ToList();
 				int empIndex = -1;
@@ -445,7 +458,7 @@ namespace TelemarketingControlSystem.Services.Projects
 						SubSegment = gsmExcel.SubSegment,
 						Segment = gsmExcel.Segment,
 
-						ProjectId = createdProjectId,
+
 						EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex)),
 
 						GenerationId = string.IsNullOrEmpty(gsmExcel.Generation) ? 1 : generations.IndexOf(gsmExcel.Generation),
@@ -456,19 +469,20 @@ namespace TelemarketingControlSystem.Services.Projects
 						CallStatusId = string.IsNullOrEmpty(gsmExcel.CallStatus) ? 1 : callStatuses.SingleOrDefault(e => e.Name == gsmExcel.CallStatus).Id
 					};
 
-					_db.ProjectDetails.Add(projectDetail);
+					project.ProjectDetails.Add(projectDetail);
 				};
 
+				_db.Projects.Add(project);
 				_db.SaveChanges();
-				transaction.Commit();
+
 				//---------------------Send Notification--------------------------
-				pushNotification(createdProjectId, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project", authData.userName);
+				pushNotification(project.Id, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project", authData.userName);
 
 				return new ResultWithMessage(null, string.Empty);
 			}
 			catch (Exception ex)
 			{
-				transaction.Rollback();
+				//Add log return Id -> 400
 				return new ResultWithMessage(null, ex.Message);
 			}
 		}

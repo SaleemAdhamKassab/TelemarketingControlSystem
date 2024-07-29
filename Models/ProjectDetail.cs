@@ -26,5 +26,7 @@ namespace TelemarketingControlSystem.Models
 		public Employee Employee { get; set; }
 		public int CallStatusId { get; set; }
 		public CallStatus CallStatus { get; set; }
+
+		public List<ProjectDetailCall> ProjectDetailCalls { get; set; }
 	}
 }

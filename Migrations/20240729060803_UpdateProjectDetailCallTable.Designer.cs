@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TelemarketingControlSystem.Models.Data;
 
@@ -11,9 +12,11 @@ using TelemarketingControlSystem.Models.Data;
 namespace TelemarketingControlSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240729060803_UpdateProjectDetailCallTable")]
+    partial class UpdateProjectDetailCallTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -582,10 +585,15 @@ namespace TelemarketingControlSystem.Migrations
                     b.Property<int>("DurationInSeconds")
                         .HasColumnType("int");
 
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ProjectDetailId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("ProjectDetailId");
 
@@ -720,8 +728,12 @@ namespace TelemarketingControlSystem.Migrations
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.ProjectDetailCall", b =>
                 {
+                    b.HasOne("TelemarketingControlSystem.Models.Employee", null)
+                        .WithMany("TelemarketerCalls")
+                        .HasForeignKey("EmployeeId");
+
                     b.HasOne("TelemarketingControlSystem.Models.ProjectDetail", "ProjectDetail")
-                        .WithMany("ProjectDetailCalls")
+                        .WithMany("TelemarketerCalls")
                         .HasForeignKey("ProjectDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -769,6 +781,8 @@ namespace TelemarketingControlSystem.Migrations
                     b.Navigation("EmployeeCalls");
 
                     b.Navigation("ProjectDetails");
+
+                    b.Navigation("TelemarketerCalls");
                 });
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.Project", b =>
@@ -780,7 +794,7 @@ namespace TelemarketingControlSystem.Migrations
 
             modelBuilder.Entity("TelemarketingControlSystem.Models.ProjectDetail", b =>
                 {
-                    b.Navigation("ProjectDetailCalls");
+                    b.Navigation("TelemarketerCalls");
                 });
 #pragma warning restore 612, 618
         }

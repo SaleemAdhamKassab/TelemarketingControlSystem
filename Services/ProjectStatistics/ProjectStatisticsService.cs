@@ -11,7 +11,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 	public interface IProjectStatisticsService
 	{
 		ResultWithMessage getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo, TenantDto authData);
-		ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, TimeOnly targetTime);
+		ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, int hour);
 	}
 	public class ProjectStatisticsService(ApplicationDbContext db) : IProjectStatisticsService
 	{
@@ -19,7 +19,6 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 
 		public ResultWithMessage getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo, TenantDto authData)
 		{
-
 			var mainObj = _db.ProjectDetails
 			.Include(e => e.Project)
 			.Include(e => e.CallStatus)
@@ -106,71 +105,49 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 
 			return new ResultWithMessage(result, string.Empty);
 		}
-		public ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, TimeOnly targetTime)
+		public ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, int hour)
 		{
-			targetDate.AddHours(targetTime.Hour);
-			//targetDate.AddMinutes(targetTime.Minute);
+			DateTime dateFrom = targetDate.AddHours(hour);
+			DateTime dateTo = dateFrom.AddMinutes(59);
 
-			var mainObj = _db.ProjectDetails
-						.Join(
-							_db.EmployeeCalls,
-							pd => pd.EmployeeId,
-							ec => ec.EmployeeId,
-							(pd, ec) => new { pd, ec }
-						)
-						.Join(
-							_db.CallStatuses,
-							combined => combined.pd.CallStatusId,
-							c => c.Id,
-							(combined, c) => new { combined.pd, combined.ec, c }
-						)
-						.Where(x => x.pd.EmployeeId == 1
-								 && x.pd.ProjectId == 9
-								 && x.pd.GSM == x.ec.GSM
-								// && x.ec.CallStartDate == DateTime.Parse("2024-10-10 11:10:00.0000000")
-								)
-						.GroupBy(x => x.c.Name)
-						.Select(g => new
-						{
-							Name = g.Key,
-							TotalMinutes = g.Sum(x => x.ec.DurationInSeconds / 60.0),
-							Rate = g.Sum(x => x.ec.DurationInSeconds / 60.0) * 60,
-
-						})
-						.ToList();
-
-			if (mainObj.Count == 0)
-				return new ResultWithMessage(null, "No Data Found");
-
-			var totalMinutesSum = mainObj.Sum(g => g.TotalMinutes);
-			var averageCallCompleted = 11;
-
-			var hourlyTelemarketerTargetCallStatusViewModel = mainObj
-							.Select(g => new
-							{
-								status = g.Name,
-								totalMinutes = g.TotalMinutes,
-								hourPercentage = g.TotalMinutes / totalMinutesSum,
-								rate = g.Rate,
-								target = g.Rate / averageCallCompleted
-							})
-							.ToList();
-
-			HourlyTelemarketerTargetViewModel model = new()
-			{
-
-				AverageCompletedCalls = averageCallCompleted,
-				Data = hourlyTelemarketerTargetCallStatusViewModel.Select(e => new HourlyTelemarketerTargetCallStatusViewModel
+			var callStatusMinutes = _db.ProjectDetailCalls
+				.Where(e => e.ProjectDetail.ProjectId == projectId && e.ProjectDetail.EmployeeId == telemarketerId && e.CallStartDate >= dateFrom && e.CallStartDate <= dateTo && !e.ProjectDetail.IsDeleted)
+				.Select(e => new
 				{
-					Status = e.status,
+					callSatus = e.ProjectDetail.CallStatus.Name,
+					totalMinutes = e.DurationInSeconds / 60.0
+				})
+				.GroupBy(g => g.callSatus)
+				.Select(e => new
+				{
+					callStatus = e.Key,
+					totalMinutes = e.Sum(x => x.totalMinutes),
+					avergeMinutes = e.Average(x => x.totalMinutes)
+				}).ToList();
+
+			if (callStatusMinutes.Count == 0)
+				return new ResultWithMessage(null, "No Date Found");
+
+			var callStatusesTotalMinutes = callStatusMinutes.Sum(g => g.totalMinutes);
+			double averageCompletedCalls = 0;
+			var averageCompletedCallsResult = callStatusMinutes.Where(e => e.callStatus.ToLower() == "completed").Select(e => e.avergeMinutes).FirstOrDefault();
+			if (averageCompletedCallsResult != null)
+				averageCompletedCalls = averageCompletedCallsResult;
+
+			HourlyTelemarketerTargetViewModel result = new()
+			{
+				AverageCompletedCalls = averageCompletedCalls,
+				Data = callStatusMinutes.Select(e => new HourlyTelemarketerTargetCallStatusViewModel
+				{
+					Status = e.callStatus,
 					TotalMinutes = e.totalMinutes,
-					HourPercentage = e.hourPercentage,
-					Rate = e.rate,
-					Target = e.target
+					HourPercentage = e.totalMinutes / callStatusesTotalMinutes,
+					Rate = (e.totalMinutes / callStatusesTotalMinutes) * 60.0,
+					Target = averageCompletedCalls != 0 ? ((e.totalMinutes / callStatusesTotalMinutes) * 60.0) / averageCompletedCalls : 0
 				}).ToList()
 			};
 
-			return new ResultWithMessage(model, string.Empty);
+			return new ResultWithMessage(result, string.Empty);
 		}
 	}
 }
