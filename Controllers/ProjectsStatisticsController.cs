@@ -31,11 +31,11 @@ namespace TelemarketingControlSystem.Controllers
 		}
 
 		[HttpGet("getProjectStatistics")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Researcher"])]
 		public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
 
 		[HttpGet("hourlyTelemarketerTarget")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Researcher"])]
 		public IActionResult hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, int hour) => _returnResultWithMessage(_projectStatisticsService.hourlyTelemarketerTarget(projectId, telemarketerId, targetDate, hour));
 	}
 }
