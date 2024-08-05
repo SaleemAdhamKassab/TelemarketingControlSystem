@@ -7,13 +7,10 @@ using static TelemarketingControlSystem.Helper.ConstantValues;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using Microsoft.AspNetCore.SignalR;
 using TelemarketingControlSystem.Services.NotificationHub;
-using NPOI.SS.Formula.Functions;
 using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
-using NPOI.OpenXmlFormats;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -110,7 +107,7 @@ namespace TelemarketingControlSystem.Services.Projects
               Quota = e.Quota,
               TypeId = e.TypeId,
               Type = projectTypes.ElementAt(e.TypeId - 1),
-              CreatedBy = e.CreatedBy
+              CreatedBy = Utilities.CapitalizeFirstLetter(e.CreatedBy.Substring(e.CreatedBy.IndexOf("\\") + 1))
           });
 
         private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
@@ -119,7 +116,7 @@ namespace TelemarketingControlSystem.Services.Projects
             {
                 Id = e.Id,
                 AlternativeNumber = e.AlternativeNumber,
-                EmployeeUserName = e.Employee.UserName,
+                EmployeeUserName = Utilities.CapitalizeFirstLetter(e.Employee.UserName.Substring(e.Employee.UserName.IndexOf("\\") + 1)),
                 EmployeeID = e.EmployeeId,
                 Bundle = e.Bundle,
                 Contract = e.Contract,
@@ -206,24 +203,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
             return filePath;
         }
-        private async Task<int> getCreatedProjectId(CreateProjectViewModel model, TenantDto authData)
-        {
-            Project project = new()
-            {
-                Name = model.Name,
-                DateFrom = model.DateFrom,
-                DateTo = model.DateTo,
-                Quota = model.Quota,
-                CreatedBy = authData.userName,
-                AddedOn = DateTime.Now,
-                TypeId = model.TypeId
-            };
-
-            _db.Projects.Add(project);
-            await _db.SaveChangesAsync();
-
-            return project.Id;
-        }
 
         private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title, string createdBy)
         {
@@ -284,12 +263,11 @@ namespace TelemarketingControlSystem.Services.Projects
         public ResultWithMessage getLineGenerations() => new(convertListToListViewModel(generations), string.Empty);
         public ResultWithMessage getEmployees()
         {
-            List<EmployeeViewModel> employees = _db.Employees.Where(e => e.IsActive)
+            List<EmployeeViewModel> employees = _db.Employees.Where(e => e.IsActive).ToList()
                 .Select(e => new EmployeeViewModel
                 {
                     Id = e.Id,
-                    //UserName = e.UserName.Substring(e.UserName.IndexOf("\\") + 1)
-                    UserName = e.Name
+                    UserName = Utilities.CapitalizeFirstLetter(e.UserName.Substring(e.UserName.IndexOf("\\") + 1))
                 })
                 .OrderBy(e => e.UserName).ToList();
 
@@ -300,23 +278,6 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         public ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData)
         {
-            //Project project = new();
-
-            //if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-            //{
-            //	project = _db.Projects.Include(e => e.ProjectDetails)
-            //							  .ThenInclude(e => e.Employee)
-            //							  .Where(e => e.Id == id && !e.IsDeleted).FirstOrDefault();
-            //}
-            //else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
-            //{
-            //	Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-
-            //	project = _db.Projects.Include(e => e.ProjectDetails.Where(e => e.EmployeeId == employee.Id))
-            //							  .ThenInclude(e => e.Employee)
-            //							  .Where(e => e.Id == id && e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted).FirstOrDefault();
-            //}
-
             Project project = _db.Projects.Find(id);
             if (project is null)
                 return new ResultWithMessage(null, $"The project with ID: {id} is not Exists");
@@ -343,8 +304,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
 
             //5- return 
-            //return new ResultWithMessage(new DataWithSize(resultSize, resultData), "");
-
             ProjectViewModel model = new()
             {
                 Id = project.Id,
@@ -354,7 +313,7 @@ namespace TelemarketingControlSystem.Services.Projects
                 Quota = project.Quota,
                 TypeId = project.TypeId,
                 Type = projectTypes.ElementAt(project.TypeId - 1),
-                CreatedBy = project.CreatedBy,
+                CreatedBy = Utilities.CapitalizeFirstLetter(project.CreatedBy),
                 ProjectDetails = resultData
             };
 
@@ -387,7 +346,6 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         public async Task<ResultWithMessage> create(CreateProjectViewModel model, TenantDto authData)
         {
-            //var transaction = _db.Database.BeginTransaction();
             try
             {
                 string validateCreateProjectModelErrorMessage = await validateCreateProjectViewModel(model);
@@ -414,8 +372,6 @@ namespace TelemarketingControlSystem.Services.Projects
                 if (duplication != null)
                     return new ResultWithMessage(null, $"Duplicate GSM {duplication.Key}");
 
-
-                // int createdProjectId = await getCreatedProjectId(model, authData);
                 Project project = new()
                 {
                     Name = model.Name,
@@ -488,11 +444,6 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         public async Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData)
         {
-            //Project projectToUpdate = await _db.Projects
-            //	.Include(e => e.ProjectDetails
-            //	.Where(x => model.ProjectDetails.Select(e => e.Id).Contains(x.Id)).OrderBy(e => e.Id))
-            //	.SingleOrDefaultAsync(e => e.Id == model.Id);
-
             Project projectToUpdate = await _db.Projects.FindAsync(model.Id);
 
             if (projectToUpdate is null)
@@ -502,7 +453,6 @@ namespace TelemarketingControlSystem.Services.Projects
             if (!string.IsNullOrEmpty(modelErrorMessage))
                 return new ResultWithMessage(null, modelErrorMessage);
 
-            //var transaction = _db.Database.BeginTransaction();
             try
             {
                 if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
@@ -516,25 +466,8 @@ namespace TelemarketingControlSystem.Services.Projects
                     projectToUpdate.LastUpdateDate = DateTime.Now;
                 }
 
-                // update project details
-                //if (model.ProjectDetails.Count > 0)
-                //{
-                //	model.ProjectDetails = model.ProjectDetails.OrderBy(e => e.Id).ToList();
-                //	for (int i = 0; i < projectToUpdate.ProjectDetails.Count; i++)
-                //	{
-                //		if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-                //			projectToUpdate.ProjectDetails.ElementAt(i).EmployeeId = model.ProjectDetails.ElementAt(i).EmployeeID;
-
-                //		projectToUpdate.ProjectDetails.ElementAt(i).Note = model.ProjectDetails.ElementAt(i).Note;
-                //		projectToUpdate.ProjectDetails.ElementAt(i).CallStatusId = model.ProjectDetails.ElementAt(i).CallStatusId;
-                //		projectToUpdate.ProjectDetails.ElementAt(i).LastUpdatedBy = authData.userName;
-                //		projectToUpdate.ProjectDetails.ElementAt(i).LastUpdateDate = DateTime.Now;
-                //	}
-                //}
-
                 _db.Update(projectToUpdate);
                 _db.SaveChanges();
-                //transaction.Commit();
 
                 return new ResultWithMessage(null, string.Empty);
             }
@@ -610,6 +543,8 @@ namespace TelemarketingControlSystem.Services.Projects
                             empIndex++;
 
                         projectDetail.EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex));
+                        projectDetail.LastUpdateDate = DateTime.Now;
+                        projectDetail.LastUpdatedBy = authData.userName;
                     }
                 }
 
