@@ -9,8 +9,9 @@ namespace TelemarketingControlSystem.Models
 		public DateTime CallStartDate { get; set; }
 		public int DurationInSeconds { get; set; }
 		public DateTime AddedOn { get; set; }
+        public string CallType { get; set; }
 
-		public int ProjectDetailId { get; set; }
+        public int ProjectDetailId { get; set; }
 		public ProjectDetail ProjectDetail { get; set; }
 	}
 }

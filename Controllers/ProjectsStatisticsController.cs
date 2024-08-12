@@ -3,6 +3,7 @@ using TelemarketingControlSystem.ActionFilters;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.ProjectStatistics;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
+using static TelemarketingControlSystem.Services.ProjectStatistics.ProjectStatisticsViewModels;
 
 namespace TelemarketingControlSystem.Controllers
 {
@@ -34,8 +35,8 @@ namespace TelemarketingControlSystem.Controllers
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Researcher"])]
 		public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
 
-		[HttpGet("hourlyTelemarketerTarget")]
+		[HttpPost("hourlyTelemarketerTarget")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Researcher"])]
-		public IActionResult hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, int hour) => _returnResultWithMessage(_projectStatisticsService.hourlyTelemarketerTarget(projectId, telemarketerId, targetDate, hour));
+		public IActionResult hourlyTelemarketerTarget(HourlyTargetDto hourlyTargetDto) => _returnResultWithMessage(_projectStatisticsService.hourlyTelemarketerTarget(hourlyTargetDto));
 	}
 }

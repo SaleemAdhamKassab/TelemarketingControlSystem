@@ -1,5 +1,6 @@
 ﻿using TelemarketingControlSystem.Helper;
 using System.ComponentModel.DataAnnotations;
+using System.Security.AccessControl;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -59,7 +60,8 @@ namespace TelemarketingControlSystem.Services.Projects
 		public int? RegionId { get; set; }
 		public int? CityId { get; set; }
 		public int CallStatusId { get; set; }
-	}
+        public DateTime? LastUpdateData { get; set; }
+    }
 	public class GSMExcel : SharedProjectDetailsAndGSMExcel { }
 	public class UpsertProjectViewModel
 	{

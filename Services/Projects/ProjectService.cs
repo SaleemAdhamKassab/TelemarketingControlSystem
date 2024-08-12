@@ -11,17 +11,18 @@ using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Office.Core;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
     public interface IProjectService
     {
         ResultWithMessage getProjectTypes();
-        ResultWithMessage getLineTypes();
+        //ResultWithMessage getLineTypes();
         ResultWithMessage getRegions();
-        ResultWithMessage getCities();
+        //ResultWithMessage getCities();
         ResultWithMessage getCallStatuses();
-        ResultWithMessage getLineGenerations();
+        //ResultWithMessage getLineGenerations();
         ResultWithMessage getEmployees();
         ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData);
         ResultWithMessage getByFilter(ProjectFilterModel model, TenantDto authData);
@@ -112,33 +113,27 @@ namespace TelemarketingControlSystem.Services.Projects
 
         private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
         {
+            List<CallStatus> callStatuses = _db.CallStatuses.ToList();
+
             return model.Select(e => new ProjectDetailViewModel
             {
                 Id = e.Id,
-                AlternativeNumber = e.AlternativeNumber,
-                EmployeeUserName = Utilities.CapitalizeFirstLetter(e.Employee.UserName.Substring(e.Employee.UserName.IndexOf("\\") + 1)),
-                EmployeeID = e.EmployeeId,
-                Bundle = e.Bundle,
-                Contract = e.Contract,
                 GSM = e.GSM,
-                Note = e.Note,
+                LineType = e.LineType,
+                CallStatusId = e.CallStatusId,
+                CallStatus = callStatuses.Single(x => x.Id == e.CallStatusId).Name,
+                Generation = e.Generation,
+                Region = e.Region,
+                City = e.City,
                 Segment = e.Segment,
                 SubSegment = e.SubSegment,
-
-                CallStatusId = e.CallStatusId,
-                CallStatus = _db.CallStatuses.Single(x => x.Id == e.CallStatusId).Name,
-
-                CityId = e.CityId,
-                City = cities[(int)e.CityId].ToString(),
-
-                GenerationId = e.GenerationId,
-                Generation = generations[(int)e.GenerationId].ToString(),
-
-                LineTypeId = e.LineTypeId,
-                LineType = lineTypes[(int)e.LineTypeId].ToString(),
-
-                RegionId = e.RegionId,
-                Region = regions[(int)e.RegionId].ToString()
+                Bundle = e.Bundle,
+                Contract = e.Contract,
+                AlternativeNumber = e.AlternativeNumber,
+                Note = e.Note,
+                EmployeeUserName = Utilities.CapitalizeFirstLetter(e.Employee.UserName.Substring(e.Employee.UserName.IndexOf("\\") + 1)),
+                EmployeeID = e.EmployeeId,
+                LastUpdateData = e.LastUpdateDate,
             });
         }
 
@@ -256,11 +251,11 @@ namespace TelemarketingControlSystem.Services.Projects
 
         ///////////////////////////// Exposed Methods /////////////////////////////
         public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
-        public ResultWithMessage getLineTypes() => new(convertListToListViewModel(lineTypes), string.Empty);
+        //public ResultWithMessage getLineTypes() => new(convertListToListViewModel(lineTypes), string.Empty);
         public ResultWithMessage getRegions() => new(convertListToListViewModel(regions), string.Empty);
-        public ResultWithMessage getCities() => new(convertListToListViewModel(cities), string.Empty);
+        //public ResultWithMessage getCities() => new(convertListToListViewModel(cities), string.Empty);
         public ResultWithMessage getCallStatuses() => new ResultWithMessage(_db.CallStatuses.ToList(), string.Empty);
-        public ResultWithMessage getLineGenerations() => new(convertListToListViewModel(generations), string.Empty);
+        //public ResultWithMessage getLineGenerations() => new(convertListToListViewModel(generations), string.Empty);
         public ResultWithMessage getEmployees()
         {
             List<EmployeeViewModel> employees = _db.Employees.Where(e => e.IsActive).ToList()
@@ -384,9 +379,6 @@ namespace TelemarketingControlSystem.Services.Projects
                     ProjectDetails = []
                 };
 
-                //if (createdProjectId < 0)
-                //	return new ResultWithMessage(null, "Invalid Created Project ID");
-
                 List<string> employeeIDs = model.EmployeeIDs.Split(',').ToList();
                 int empIndex = -1;
 
@@ -403,26 +395,22 @@ namespace TelemarketingControlSystem.Services.Projects
                     ProjectDetail projectDetail = new()
                     {
                         GSM = gsmExcel.GSM,
+                        LineType = gsmExcel.LineType,
+                        CallStatusId = string.IsNullOrEmpty(gsmExcel.CallStatus) ? 1 : callStatuses.SingleOrDefault(e => e.Name == gsmExcel.CallStatus).Id,
+                        Generation = gsmExcel.Generation,
+                        Region = gsmExcel.Region,
+                        City = gsmExcel.City,
+                        Segment = gsmExcel.Segment,
+                        SubSegment = gsmExcel.SubSegment,
+                        Bundle = gsmExcel.Bundle,
+                        Contract = gsmExcel.Contract,
+                        AlternativeNumber = gsmExcel.AlternativeNumber,
                         Note = gsmExcel.Note,
                         AddedOn = DateTime.Now,
                         CreatedBy = authData.userName,
                         LastUpdateDate = DateTime.Now,
                         LastUpdatedBy = authData.userName,
-                        AlternativeNumber = gsmExcel.AlternativeNumber,
-                        Bundle = gsmExcel.Bundle,
-                        Contract = gsmExcel.Contract,
-                        SubSegment = gsmExcel.SubSegment,
-                        Segment = gsmExcel.Segment,
-
-
                         EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex)),
-
-                        GenerationId = string.IsNullOrEmpty(gsmExcel.Generation) ? 1 : generations.IndexOf(gsmExcel.Generation),
-                        LineTypeId = string.IsNullOrEmpty(gsmExcel.LineType) ? 1 : lineTypes.IndexOf(gsmExcel.LineType),
-                        CityId = string.IsNullOrEmpty(gsmExcel.City) ? 1 : cities.IndexOf(gsmExcel.City),
-                        RegionId = string.IsNullOrEmpty(gsmExcel.Region) ? 1 : regions.IndexOf(gsmExcel.Region),
-
-                        CallStatusId = string.IsNullOrEmpty(gsmExcel.CallStatus) ? 1 : callStatuses.SingleOrDefault(e => e.Name == gsmExcel.CallStatus).Id
                     };
 
                     project.ProjectDetails.Add(projectDetail);

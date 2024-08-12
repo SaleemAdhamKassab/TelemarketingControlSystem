@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TelemarketingControlSystem.Helper;
+using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using static TelemarketingControlSystem.Services.ProjectStatistics.ProjectStatisticsViewModels;
@@ -9,7 +10,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
     public interface IProjectStatisticsService
     {
         ResultWithMessage getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo, TenantDto authData);
-        ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, int hour);
+        ResultWithMessage hourlyTelemarketerTarget(HourlyTargetDto hourlyTargetDto);
     }
     public class ProjectStatisticsService(ApplicationDbContext db) : IProjectStatisticsService
     {
@@ -17,6 +18,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 
         public ResultWithMessage getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo, TenantDto authData)
         {
+            dateTo = dateTo.AddSeconds(86399);
+
             var projectDetails = _db.ProjectDetails
             .Where(e => e.ProjectId == projectId && e.LastUpdateDate >= dateFrom && e.LastUpdateDate <= dateTo && !e.IsDeleted)
             .Include(e => e.Project)
@@ -106,19 +109,36 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
 
             return new ResultWithMessage(result, string.Empty);
         }
-        public ResultWithMessage hourlyTelemarketerTarget(int projectId, int telemarketerId, DateTime targetDate, int hour)
+        public ResultWithMessage hourlyTelemarketerTarget(HourlyTargetDto hourlyTargetDto)
         {
-            DateTime dateFrom = targetDate.AddHours(hour);
-            DateTime dateTo = dateFrom.AddMinutes(59);
+            var minDuration = _db.ProjectDetailCalls
+                                    .Where(e => e.ProjectDetail.ProjectId == hourlyTargetDto.ProjectId
+                                    && hourlyTargetDto.TelemarketerIds.Any(tId => e.ProjectDetail.EmployeeId == tId)
+                                    && e.CallStartDate >= hourlyTargetDto.TargetDate
+                                    && e.CallStartDate <= hourlyTargetDto.TargetDate.AddMinutes(59)
+                                    && !e.ProjectDetail.IsDeleted)
+                                    .Min(e => e.DurationInSeconds);
 
-            var callStatusMinutes = _db.ProjectDetailCalls
-                .Where(e => e.ProjectDetail.ProjectId == projectId && e.ProjectDetail.EmployeeId == telemarketerId && e.CallStartDate >= dateFrom && e.CallStartDate <= dateTo && !e.ProjectDetail.IsDeleted)
-                .Select(e => new
-                {
-                    callSatus = e.ProjectDetail.CallStatus.Name,
-                    totalMinutes = e.DurationInSeconds / 60.0
-                })
-                .GroupBy(g => g.callSatus)
+            var telemarketerCalls = _db.ProjectDetailCalls
+                                    .Where(e => e.ProjectDetail.ProjectId == hourlyTargetDto.ProjectId
+                                        && hourlyTargetDto.TelemarketerIds.Any(tId => e.ProjectDetail.EmployeeId == tId)
+                                        && e.CallStartDate >= hourlyTargetDto.TargetDate
+                                        && e.CallStartDate <= hourlyTargetDto.TargetDate.AddMinutes(59)
+                                        && !e.ProjectDetail.IsDeleted
+                                        && e.DurationInSeconds >= minDuration
+                                        && e.DurationInSeconds <= minDuration + 120)
+                                    .Select(e => new
+                                    {
+                                        callStatus = e.ProjectDetail.CallStatus.Name,
+                                        totalMinutes = e.DurationInSeconds / 60.0
+                                    })
+                                    .ToList();
+
+            if (telemarketerCalls.Count == 0)
+                return new ResultWithMessage(null, "No Date Found");
+
+            var callStatusMinutes = telemarketerCalls
+                .GroupBy(g => g.callStatus)
                 .Select(e => new
                 {
                     callStatus = e.Key,
@@ -126,8 +146,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
                     avergeMinutes = e.Average(x => x.totalMinutes)
                 }).ToList();
 
-            if (callStatusMinutes.Count == 0)
-                return new ResultWithMessage(null, "No Date Found");
+
 
             var callStatusesTotalMinutes = callStatusMinutes.Sum(g => g.totalMinutes);
             double averageCompletedCalls = 0;

@@ -35,17 +35,17 @@ namespace TelemarketingControlSystem.Controllers
 		public IActionResult getProjectTypes() => _returnResultWithMessage(_projectService.getProjectTypes());
 
 
-		[HttpGet("getLineTypes")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-		public IActionResult getLineTypes() => _returnResultWithMessage(_projectService.getLineTypes());
+		//[HttpGet("getLineTypes")]
+		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		//public IActionResult getLineTypes() => _returnResultWithMessage(_projectService.getLineTypes());
 
 		[HttpGet("getRegions")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getRegions() => _returnResultWithMessage(_projectService.getRegions());
 
-		[HttpGet("getCities")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-		public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
+		//[HttpGet("getCities")]
+		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		//public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
 
 		[HttpGet("getCallStatuses")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
@@ -55,9 +55,9 @@ namespace TelemarketingControlSystem.Controllers
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
 		public IActionResult getEmployees() => _returnResultWithMessage(_projectService.getEmployees());
 
-		[HttpGet("getLineGenerations")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-		public IActionResult getLineGenerations() => _returnResultWithMessage(_projectService.getLineGenerations());
+		//[HttpGet("getLineGenerations")]
+		//[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		//public IActionResult getLineGenerations() => _returnResultWithMessage(_projectService.getLineGenerations());
 
 		[HttpPost("getById")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
