@@ -113,15 +113,13 @@ namespace TelemarketingControlSystem.Services.Projects
 
         private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
         {
-            List<CallStatus> callStatuses = _db.CallStatuses.ToList();
-
             return model.Select(e => new ProjectDetailViewModel
             {
                 Id = e.Id,
                 GSM = e.GSM,
                 LineType = e.LineType,
                 CallStatusId = e.CallStatusId,
-                CallStatus = callStatuses.Single(x => x.Id == e.CallStatusId).Name,
+                CallStatus = _db.CallStatuses.Single(x => x.Id == e.CallStatusId).Name,
                 Generation = e.Generation,
                 Region = e.Region,
                 City = e.City,
@@ -133,7 +131,7 @@ namespace TelemarketingControlSystem.Services.Projects
                 Note = e.Note,
                 EmployeeUserName = Utilities.CapitalizeFirstLetter(e.Employee.UserName.Substring(e.Employee.UserName.IndexOf("\\") + 1)),
                 EmployeeID = e.EmployeeId,
-                LastUpdateData = e.LastUpdateDate,
+                LastUpdateDate = e.LastUpdateDate,
             });
         }
 

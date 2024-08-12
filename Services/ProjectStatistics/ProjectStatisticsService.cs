@@ -111,31 +111,31 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
         }
         public ResultWithMessage hourlyTelemarketerTarget(HourlyTargetDto hourlyTargetDto)
         {
-            var minDuration = _db.ProjectDetailCalls
+            var pdc = _db.ProjectDetailCalls
                                     .Where(e => e.ProjectDetail.ProjectId == hourlyTargetDto.ProjectId
                                     && hourlyTargetDto.TelemarketerIds.Any(tId => e.ProjectDetail.EmployeeId == tId)
                                     && e.CallStartDate >= hourlyTargetDto.TargetDate
-                                    && e.CallStartDate <= hourlyTargetDto.TargetDate.AddMinutes(59)
+                                    && e.CallStartDate <= hourlyTargetDto.TargetDate.AddHours(1)
                                     && !e.ProjectDetail.IsDeleted)
-                                    .Min(e => e.DurationInSeconds);
-
-            var telemarketerCalls = _db.ProjectDetailCalls
-                                    .Where(e => e.ProjectDetail.ProjectId == hourlyTargetDto.ProjectId
-                                        && hourlyTargetDto.TelemarketerIds.Any(tId => e.ProjectDetail.EmployeeId == tId)
-                                        && e.CallStartDate >= hourlyTargetDto.TargetDate
-                                        && e.CallStartDate <= hourlyTargetDto.TargetDate.AddMinutes(59)
-                                        && !e.ProjectDetail.IsDeleted
-                                        && e.DurationInSeconds >= minDuration
-                                        && e.DurationInSeconds <= minDuration + 120)
-                                    .Select(e => new
-                                    {
-                                        callStatus = e.ProjectDetail.CallStatus.Name,
-                                        totalMinutes = e.DurationInSeconds / 60.0
-                                    })
+                                    .Include(e => e.ProjectDetail.CallStatus)
                                     .ToList();
 
-            if (telemarketerCalls.Count == 0)
+            if (pdc.Count == 0)
+                return new ResultWithMessage(null, "No data found");
+
+            var minDuration = pdc.Select(e => e.DurationInSeconds).Min();
+
+            var pdcDurationRang = pdc.Where(e => e.DurationInSeconds >= minDuration && e.DurationInSeconds <= minDuration + 120).ToList();
+            if (pdcDurationRang.Count == 0)
                 return new ResultWithMessage(null, "No Date Found");
+
+            var telemarketerCalls = pdcDurationRang.Select(e => new
+            {
+                callStatus = e.ProjectDetail.CallStatus.Name,
+                totalMinutes = e.DurationInSeconds / 60.0
+            }).ToList();
+
+
 
             var callStatusMinutes = telemarketerCalls
                 .GroupBy(g => g.callStatus)
@@ -145,8 +145,6 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
                     totalMinutes = e.Sum(x => x.totalMinutes),
                     avergeMinutes = e.Average(x => x.totalMinutes)
                 }).ToList();
-
-
 
             var callStatusesTotalMinutes = callStatusMinutes.Sum(g => g.totalMinutes);
             double averageCompletedCalls = 0;

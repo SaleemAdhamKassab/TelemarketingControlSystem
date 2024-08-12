@@ -60,7 +60,7 @@ namespace TelemarketingControlSystem.Services.Projects
 		public int? RegionId { get; set; }
 		public int? CityId { get; set; }
 		public int CallStatusId { get; set; }
-        public DateTime? LastUpdateData { get; set; }
+        public DateTime? LastUpdateDate { get; set; }
     }
 	public class GSMExcel : SharedProjectDetailsAndGSMExcel { }
 	public class UpsertProjectViewModel
