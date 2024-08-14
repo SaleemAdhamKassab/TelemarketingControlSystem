@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
+using System.Globalization;
 using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
@@ -111,14 +113,17 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
         }
         public ResultWithMessage hourlyTelemarketerTarget(HourlyTargetDto hourlyTargetDto)
         {
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time");
+            hourlyTargetDto.TargetDate = TimeZoneInfo.ConvertTimeFromUtc(hourlyTargetDto.TargetDate, timeZone);
+
             var pdc = _db.ProjectDetailCalls
-                                    .Where(e => e.ProjectDetail.ProjectId == hourlyTargetDto.ProjectId
-                                    && hourlyTargetDto.TelemarketerIds.Any(tId => e.ProjectDetail.EmployeeId == tId)
-                                    && e.CallStartDate >= hourlyTargetDto.TargetDate
-                                    && e.CallStartDate <= hourlyTargetDto.TargetDate.AddHours(1)
-                                    && !e.ProjectDetail.IsDeleted)
-                                    .Include(e => e.ProjectDetail.CallStatus)
-                                    .ToList();
+                                          .Where(e => e.ProjectDetail.ProjectId == hourlyTargetDto.ProjectId
+                                          && hourlyTargetDto.TelemarketerIds.Any(tId => e.ProjectDetail.EmployeeId == tId)
+                                          && e.CallStartDate >= hourlyTargetDto.TargetDate
+                                          && e.CallStartDate <= hourlyTargetDto.TargetDate.AddHours(1)
+                                          && !e.ProjectDetail.IsDeleted)
+                                          .Include(e => e.ProjectDetail.CallStatus)
+                                          .ToList();
 
             if (pdc.Count == 0)
                 return new ResultWithMessage(null, "No data found");
