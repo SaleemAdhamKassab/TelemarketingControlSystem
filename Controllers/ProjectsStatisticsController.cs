@@ -8,35 +8,35 @@ using static TelemarketingControlSystem.Services.ProjectStatistics.ProjectStatis
 namespace TelemarketingControlSystem.Controllers
 {
 
-	public class ProjectsStatisticsController : BaseController
-	{
-		private readonly IProjectStatisticsService _projectStatisticsService;
-		private readonly IJwtService _jwtService;
-		private readonly IHttpContextAccessor _contextAccessor;
+    public class ProjectsStatisticsController : BaseController
+    {
+        private readonly IProjectStatisticsService _projectStatisticsService;
+        private readonly IJwtService _jwtService;
+        private readonly IHttpContextAccessor _contextAccessor;
 
-		public ProjectsStatisticsController(IProjectStatisticsService projectStatisticsService, IJwtService jwtService, IHttpContextAccessor contextAccessor)
-		{
-			_projectStatisticsService = projectStatisticsService;
-			_jwtService = jwtService;
-			_contextAccessor = contextAccessor;
-		}
+        public ProjectsStatisticsController(IProjectStatisticsService projectStatisticsService, IJwtService jwtService, IHttpContextAccessor contextAccessor)
+        {
+            _projectStatisticsService = projectStatisticsService;
+            _jwtService = jwtService;
+            _contextAccessor = contextAccessor;
+        }
 
-		private TenantDto authData()
-		{
-			string Header = _contextAccessor.HttpContext.Request.Headers["Authorization"];
-			var token = Header.Split(' ').Last();
-			TenantDto result = _jwtService.TokenConverter(token);
-			if (result is null)
-				return null;
-			return result;
-		}
+        private TenantDto authData()
+        {
+            string Header = _contextAccessor.HttpContext.Request.Headers["Authorization"];
+            var token = Header.Split(' ').Last();
+            TenantDto result = _jwtService.TokenConverter(token);
+            if (result is null)
+                return null;
+            return result;
+        }
 
-		[HttpGet("getProjectStatistics")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Researcher"])]
-		public IActionResult getProjectStatistics(int projectId, DateTime dateFrom, DateTime dateTo) => _returnResultWithMessage(_projectStatisticsService.getProjectStatistics(projectId, dateFrom, dateTo, authData()));
+        [HttpPost("generalReport")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer,Researcher,Segmentation"])]
+        public IActionResult generalReport(GeneralReportDto generalReportDto) => _returnResultWithMessage(_projectStatisticsService.generalReport(generalReportDto));
 
-		[HttpPost("hourlyTelemarketerTarget")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Researcher"])]
-		public IActionResult hourlyTelemarketerTarget(HourlyTargetDto hourlyTargetDto) => _returnResultWithMessage(_projectStatisticsService.hourlyTelemarketerTarget(hourlyTargetDto));
-	}
+        [HttpPost("hourlyTarget")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+        public IActionResult hourlyTarget(HourlyTargetDto hourlyTargetDto) => _returnResultWithMessage(_projectStatisticsService.hourlyTarget(hourlyTargetDto));
+    }
 }

@@ -11,7 +11,6 @@ using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Office.Core;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -31,10 +30,10 @@ namespace TelemarketingControlSystem.Services.Projects
         Task<ResultWithMessage> delete(int id, TenantDto authData);
         Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
         Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
+        byte[] exportProjectDetailsToExcel(int projectId, string sheetName);
     }
 
-    public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub
-        , INotificationService> notification, IConfiguration config) : IProjectService
+    public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification, IConfiguration config) : IProjectService
     {
         private readonly ApplicationDbContext _db = db;
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
@@ -108,9 +107,8 @@ namespace TelemarketingControlSystem.Services.Projects
               Quota = e.Quota,
               TypeId = e.TypeId,
               Type = projectTypes.ElementAt(e.TypeId - 1),
-              CreatedBy = Utilities.CapitalizeFirstLetter(e.CreatedBy.Substring(e.CreatedBy.IndexOf("\\") + 1))
+              CreatedBy = Utilities.modifyUserName(e.CreatedBy)
           });
-
         private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
         {
             return model.Select(e => new ProjectDetailViewModel
@@ -129,12 +127,11 @@ namespace TelemarketingControlSystem.Services.Projects
                 Contract = e.Contract,
                 AlternativeNumber = e.AlternativeNumber,
                 Note = e.Note,
-                EmployeeUserName = Utilities.CapitalizeFirstLetter(e.Employee.UserName.Substring(e.Employee.UserName.IndexOf("\\") + 1)),
+                EmployeeUserName = Utilities.modifyUserName(e.Employee.UserName),
                 EmployeeID = e.EmployeeId,
                 LastUpdateDate = e.LastUpdateDate,
             });
         }
-
         private async Task<string> validateCreateProjectViewModel(CreateProjectViewModel model)
         {
             Project project = await _db.Projects.SingleOrDefaultAsync(e => e.Name.ToLower() == model.Name.Trim().ToLower() && !e.IsDeleted);
@@ -196,7 +193,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
             return filePath;
         }
-
         private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title, string createdBy)
         {
             List<string> userNames = _db.Employees.Where(x => userIds.Contains(x.Id.ToString())).Select(x => x.UserName).ToList();
@@ -245,7 +241,39 @@ namespace TelemarketingControlSystem.Services.Projects
 
             return result.OrderBy(e => e.Name).ToList();
         }
+        private byte[] exportProjectDetailsDataToExcel(int projectId, string sheetName)
+        {
+            var data = _db.ProjectDetails
+                .Where(e => e.ProjectId == projectId)
+                .Include(e => e.Project)
+                .Select(e => new ProjectDetailsDataToExcel
+                {
+                    Project = e.Project.Name,
+                    CreatedBy = Utilities.modifyUserName(e.CreatedBy),
+                    Region = e.Region,
+                    LineType = e.LineType,
+                    AddedOn = e.AddedOn,
+                    AlternativeNumber = e.AlternativeNumber,
+                    Bundle = e.Bundle,
+                    CallStatus = e.CallStatus.Name,
+                    City = e.City,
+                    Contract = e.Contract,
+                    Employee = Utilities.modifyUserName(e.Employee.UserName),
+                    Generation = e.Generation,
+                    GSM = e.GSM,
+                    LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
+                    LastUpdatedDate = e.LastUpdateDate,
+                    Note = e.Note,
+                    Segment = e.Segment,
+                    SubSegment = e.SubSegment
+                })
+                .ToList();
 
+            var exportService = new ExportService();
+            byte[] excelData = exportService.ExportToExcel(data, sheetName);
+
+            return excelData;
+        }
 
         ///////////////////////////// Exposed Methods /////////////////////////////
         public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
@@ -260,7 +288,7 @@ namespace TelemarketingControlSystem.Services.Projects
                 .Select(e => new EmployeeViewModel
                 {
                     Id = e.Id,
-                    UserName = Utilities.CapitalizeFirstLetter(e.UserName.Substring(e.UserName.IndexOf("\\") + 1))
+                    UserName = Utilities.modifyUserName(e.UserName)
                 })
                 .OrderBy(e => e.UserName).ToList();
 
@@ -306,13 +334,12 @@ namespace TelemarketingControlSystem.Services.Projects
                 Quota = project.Quota,
                 TypeId = project.TypeId,
                 Type = projectTypes.ElementAt(project.TypeId - 1),
-                CreatedBy = Utilities.CapitalizeFirstLetter(project.CreatedBy),
+                CreatedBy = Utilities.modifyUserName(project.CreatedBy),
                 ProjectDetails = resultData
             };
 
             return new ResultWithMessage(new DataWithSize(resultSize, model), string.Empty);
         }
-
         public ResultWithMessage getByFilter(ProjectFilterModel filter, TenantDto authData)
         {
             //1- Apply Filters just search query
@@ -499,7 +526,6 @@ namespace TelemarketingControlSystem.Services.Projects
                 return new ResultWithMessage(null, e.Message);
             }
         }
-
         public async Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto authData)
         {
             if (!authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
@@ -545,7 +571,6 @@ namespace TelemarketingControlSystem.Services.Projects
                 return new ResultWithMessage(null, e.Message);
             }
         }
-
         public async Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto authData)
         {
             ProjectDetail projectDetailToUpdate = await _db.ProjectDetails.FindAsync(model.Id);
@@ -571,5 +596,6 @@ namespace TelemarketingControlSystem.Services.Projects
                 return new ResultWithMessage(null, e.Message);
             }
         }
+        public byte[] exportProjectDetailsToExcel(int projectId, string sheetName) => exportProjectDetailsDataToExcel(projectId, sheetName);
     }
 }

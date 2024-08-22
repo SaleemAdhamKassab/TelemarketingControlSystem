@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace TelemarketingControlSystem.Services.ProjectStatistics
+﻿namespace TelemarketingControlSystem.Services.ProjectStatistics
 {
     public class ProjectStatisticsViewModels
     {
@@ -9,11 +7,9 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
             public string ProjectName { get; set; }
             public string CreatedBy { get; set; }
             public DateTime AddedOn { get; set; }
-
             public List<CardViewModel> GeneralDetails { get; set; } = [];
-            public List<CardViewModel> CallStatuses { get; set; } = [];
-            public List<TelemarketerProductivityCardViewModel> TelemarketerProductivities { get; set; } = [];
-            public List<CompletedQuotaPerDay> CompletedQuotaPerDays { get; set; } = [];
+            public StatsticReport StatsticReport { get; set; }
+            public List<ClosedPerDay> ClosedPerDays { get; set; } = [];
         }
 
         public class CardViewModel
@@ -22,26 +18,36 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
             public int Count { get; set; }
             public int Total { get; set; }
         }
-        public class TelemarketerProductivityCardViewModel
+
+        public class StatsticReport
+        {
+            public List<StatusData> Data { get; set; }
+            public List<TelemarketerGSM> Footer { get; set; }
+        }
+
+        public class StatusData
+        {
+            public string Status { get; set; }
+            public List<TelemarketerGSM> TelemarketerGSMs { get; set; }
+        }
+
+        public class TelemarketerGSM
         {
             public string Telemarketer { get; set; }
             public int AssignedGSMs { get; set; }
-            public int Completed { get; set; }
-            public int Closed { get; set; }
-            public double CompletedRate { get; set; }
-            public double ClosedRate { get; set; }
         }
-        public class CompletedQuotaPerDay
+
+        public class ClosedPerDay
         {
             public DateTime Date { get; set; }
             public int Count { get; set; }
         }
-        public class HourlyTelemarketerTargetViewModel
+        public class HourlyTargetViewModel
         {
-            public double AverageCompletedCalls { get; set; }
-            public List<HourlyTelemarketerTargetCallStatusViewModel> Data { get; set; }
+            public double ClosedCallsAvg { get; set; }
+            public List<HourlyStatusTarget> HourlyStatusTargets { get; set; }
         }
-        public class HourlyTelemarketerTargetCallStatusViewModel
+        public class HourlyStatusTarget
         {
             public string Status { get; set; }
             public double TotalMinutes { get; set; }
@@ -54,6 +60,22 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
             public int ProjectId { get; set; }
             public DateTime TargetDate { get; set; }
             public List<int> TelemarketerIds { get; set; }
+        }
+        public class GeneralReportDto
+        {
+            public int ProjectId { get; set; }
+            public DateTime DateFrom { get; set; }
+            public DateTime DateTo { get; set; }
+            public List<int>? TelemarketerIds { get; set; }
+            public string? LineType { get; set; }
+            public string? CallStatus { get; set; }
+            public string? Generation { get; set; }
+            public string? Region { get; set; }
+            public string? City { get; set; }
+            public string? Segment { get; set; }
+            public string? SubSegment { get; set; }
+            public string? Bundle { get; set; }
+            public string? Contract { get; set; }
         }
     }
 }
