@@ -1,6 +1,8 @@
 ﻿using TelemarketingControlSystem.Helper;
 using System.ComponentModel.DataAnnotations;
 using System.Security.AccessControl;
+using TelemarketingControlSystem.Models.Notification;
+using TelemarketingControlSystem.Models;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -107,7 +109,12 @@ namespace TelemarketingControlSystem.Services.Projects
     }
     public class ProjectDataToExcel
     {
-
+        public string Name { get; set; }
+        public DateTime DateFrom { get; set; }
+        public DateTime DateTo { get; set; }
+        public int Quota { get; set; }
+        public DateTime AddedOn { get; set; }
+        public string Type { get; set; }
     }
     public class ProjectDetailsDataToExcel
     {

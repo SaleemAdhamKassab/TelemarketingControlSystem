@@ -4,9 +4,9 @@ using System.Drawing;
 
 namespace TelemarketingControlSystem.Helper
 {
-    public  class ExportService
+    public class ExportService
     {
-        public  byte[] ExportToExcel<T>(IEnumerable<T> data, string sheetName)
+        public byte[] ExportToExcel<T>(IEnumerable<T> data, string sheetName)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 

@@ -11,8 +11,19 @@
 		public Object? Data { get; set; }
 		public string? Message { get; set; }
 	}
+    public class ByteResultWithMessage
+    {
+        public ByteResultWithMessage(Byte[] data, string message)
+        {
+            Data = data;
+            Message = message;
+        }
 
-	public class DataWithSize
+        public Byte[]? Data { get; set; }
+        public string? Message { get; set; }
+    }
+
+    public class DataWithSize
 	{
 		public DataWithSize(int dataSize, object data)
 		{

@@ -4,7 +4,6 @@ using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.Projects;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
-using static TelemarketingControlSystem.Services.Projects.ProjectService;
 
 namespace TelemarketingControlSystem.Controllers
 {
@@ -36,18 +35,9 @@ namespace TelemarketingControlSystem.Controllers
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
         public IActionResult getProjectTypes() => _returnResultWithMessage(_projectService.getProjectTypes());
 
-
-        //[HttpGet("getLineTypes")]
-        //[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-        //public IActionResult getLineTypes() => _returnResultWithMessage(_projectService.getLineTypes());
-
         [HttpGet("getRegions")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
         public IActionResult getRegions() => _returnResultWithMessage(_projectService.getRegions());
-
-        //[HttpGet("getCities")]
-        //[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-        //public IActionResult getCities() => _returnResultWithMessage(_projectService.getCities());
 
         [HttpGet("getCallStatuses")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
@@ -56,10 +46,6 @@ namespace TelemarketingControlSystem.Controllers
         [HttpGet("getEmployees")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
         public IActionResult getEmployees() => _returnResultWithMessage(_projectService.getEmployees());
-
-        //[HttpGet("getLineGenerations")]
-        //[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-        //public IActionResult getLineGenerations() => _returnResultWithMessage(_projectService.getLineGenerations());
 
         [HttpPost("getById")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
@@ -93,11 +79,23 @@ namespace TelemarketingControlSystem.Controllers
         public async Task<IActionResult> updateProjectDetail(ProjectDetailViewModel model) => _returnResultWithMessage(await _projectService.updateProjectDetail(model, authData()));
 
         [HttpGet("exportProjectDetailsToExcel")]
-        public IActionResult exportProjectDetailsToExcel(int projectId, string sheetName)
+        public IActionResult exportProjectDetailsToExcel(int projectId)
         {
-            // how to retrive it?
-            byte[] excelData = _projectService.exportProjectDetailsToExcel(projectId, sheetName);
-            return File(excelData, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"Project Details excelData.xlsx");
+            var excelData = _projectService.exportProjectDetailsToExcel(projectId);
+            if (!string.IsNullOrEmpty(excelData.Message))
+                return BadRequest(excelData.Message);
+
+            return File(excelData.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Project Details.xlsx");
+        }
+
+        [HttpGet("exportProjectsToExcel")]
+        public IActionResult exportProjectsToExcel()
+        {
+            var excelData = _projectService.exportProjectsToExcel();
+            if (!string.IsNullOrEmpty(excelData.Message))
+                return BadRequest(excelData.Message);
+
+            return File(excelData.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Projects.xlsx");
         }
     }
 }

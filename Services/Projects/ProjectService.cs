@@ -17,11 +17,8 @@ namespace TelemarketingControlSystem.Services.Projects
     public interface IProjectService
     {
         ResultWithMessage getProjectTypes();
-        //ResultWithMessage getLineTypes();
         ResultWithMessage getRegions();
-        //ResultWithMessage getCities();
         ResultWithMessage getCallStatuses();
-        //ResultWithMessage getLineGenerations();
         ResultWithMessage getEmployees();
         ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData);
         ResultWithMessage getByFilter(ProjectFilterModel model, TenantDto authData);
@@ -30,7 +27,8 @@ namespace TelemarketingControlSystem.Services.Projects
         Task<ResultWithMessage> delete(int id, TenantDto authData);
         Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
         Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
-        byte[] exportProjectDetailsToExcel(int projectId, string sheetName);
+        ByteResultWithMessage exportProjectDetailsToExcel(int projectId);
+        ByteResultWithMessage exportProjectsToExcel();
     }
 
     public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification, IConfiguration config) : IProjectService
@@ -223,6 +221,8 @@ namespace TelemarketingControlSystem.Services.Projects
 
             }
         }
+       
+        
         public List<ListViewModel> convertListToListViewModel(List<string> list)
         {
             List<ListViewModel> result = [];
@@ -241,47 +241,9 @@ namespace TelemarketingControlSystem.Services.Projects
 
             return result.OrderBy(e => e.Name).ToList();
         }
-        private byte[] exportProjectDetailsDataToExcel(int projectId, string sheetName)
-        {
-            var data = _db.ProjectDetails
-                .Where(e => e.ProjectId == projectId)
-                .Include(e => e.Project)
-                .Select(e => new ProjectDetailsDataToExcel
-                {
-                    Project = e.Project.Name,
-                    CreatedBy = Utilities.modifyUserName(e.CreatedBy),
-                    Region = e.Region,
-                    LineType = e.LineType,
-                    AddedOn = e.AddedOn,
-                    AlternativeNumber = e.AlternativeNumber,
-                    Bundle = e.Bundle,
-                    CallStatus = e.CallStatus.Name,
-                    City = e.City,
-                    Contract = e.Contract,
-                    Employee = Utilities.modifyUserName(e.Employee.UserName),
-                    Generation = e.Generation,
-                    GSM = e.GSM,
-                    LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
-                    LastUpdatedDate = e.LastUpdateDate,
-                    Note = e.Note,
-                    Segment = e.Segment,
-                    SubSegment = e.SubSegment
-                })
-                .ToList();
-
-            var exportService = new ExportService();
-            byte[] excelData = exportService.ExportToExcel(data, sheetName);
-
-            return excelData;
-        }
-
-        ///////////////////////////// Exposed Methods /////////////////////////////
         public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
-        //public ResultWithMessage getLineTypes() => new(convertListToListViewModel(lineTypes), string.Empty);
         public ResultWithMessage getRegions() => new(convertListToListViewModel(regions), string.Empty);
-        //public ResultWithMessage getCities() => new(convertListToListViewModel(cities), string.Empty);
         public ResultWithMessage getCallStatuses() => new ResultWithMessage(_db.CallStatuses.ToList(), string.Empty);
-        //public ResultWithMessage getLineGenerations() => new(convertListToListViewModel(generations), string.Empty);
         public ResultWithMessage getEmployees()
         {
             List<EmployeeViewModel> employees = _db.Employees.Where(e => e.IsActive).ToList()
@@ -596,6 +558,67 @@ namespace TelemarketingControlSystem.Services.Projects
                 return new ResultWithMessage(null, e.Message);
             }
         }
-        public byte[] exportProjectDetailsToExcel(int projectId, string sheetName) => exportProjectDetailsDataToExcel(projectId, sheetName);
+        public ByteResultWithMessage exportProjectDetailsToExcel(int projectId)
+        {
+            Project project = _db.Projects.Find(projectId);
+            if (project is null)
+                return new ByteResultWithMessage(null, $"Invalid project Id: {projectId}");
+
+            var data = _db.ProjectDetails
+               .Where(e => e.ProjectId == projectId)
+               .Include(e => e.Project)
+               .Select(e => new ProjectDetailsDataToExcel
+               {
+                   Project = e.Project.Name,
+                   CreatedBy = Utilities.modifyUserName(e.CreatedBy),
+                   Region = e.Region,
+                   LineType = e.LineType,
+                   AddedOn = e.AddedOn,
+                   AlternativeNumber = e.AlternativeNumber,
+                   Bundle = e.Bundle,
+                   CallStatus = e.CallStatus.Name,
+                   City = e.City,
+                   Contract = e.Contract,
+                   Employee = Utilities.modifyUserName(e.Employee.UserName),
+                   Generation = e.Generation,
+                   GSM = e.GSM,
+                   LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
+                   LastUpdatedDate = e.LastUpdateDate,
+                   Note = e.Note,
+                   Segment = e.Segment,
+                   SubSegment = e.SubSegment
+               })
+               .ToList();
+
+            if (data.Count == 0)
+                return new ByteResultWithMessage(null, $"No data found");
+
+            var exportService = new ExportService();
+            byte[] excelData = exportService.ExportToExcel(data, "Project Details");
+
+            return new ByteResultWithMessage(excelData, string.Empty);
+        }
+        public ByteResultWithMessage exportProjectsToExcel()
+        {
+            var data = _db.Projects
+               .Select(e => new ProjectDataToExcel
+               {
+                   Name = e.Name,
+                   AddedOn = e.AddedOn,
+                   DateFrom = e.DateFrom,
+                   DateTo = e.DateTo,
+                   Quota = e.Quota,
+                   Type = projectTypes.ElementAt(e.TypeId)
+               })
+               .ToList();
+
+            if (data.Count == 0)
+                return new ByteResultWithMessage(null, $"No data found");
+
+            var exportService = new ExportService();
+            byte[] excelData = exportService.ExportToExcel(data, "Projects");
+
+            return new ByteResultWithMessage(excelData, string.Empty);
+        }
     }
 }
