@@ -80,11 +80,11 @@ namespace TelemarketingControlSystem.Services.Projects
             IQueryable<ProjectDetail> query;
 
             if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-                query = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == id && !e.IsDeleted);
+                query = _db.ProjectDetails.Include(e => e.CallStatus).Include(e => e.Employee).Where(e => e.ProjectId == id && !e.IsDeleted);
             else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
             {
                 Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-                query = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == id && e.EmployeeId == employee.Id && !e.IsDeleted);
+                query = _db.ProjectDetails.Include(e => e.CallStatus).Include(e => e.Employee).Where(e => e.ProjectId == id && e.EmployeeId == employee.Id && !e.IsDeleted);
             }
 
             else
@@ -116,6 +116,13 @@ namespace TelemarketingControlSystem.Services.Projects
                             }
                             break;
 
+                        case "Employee":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.Employee.UserName.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
                         case "Generation":
                             foreach (string value in columnFilter.DistinctValues)
                             {
@@ -123,7 +130,7 @@ namespace TelemarketingControlSystem.Services.Projects
                             }
                             break;
 
-                        case "Region":
+                        case "Regions":
                             foreach (string value in columnFilter.DistinctValues)
                             {
                                 query = query.Where(e => e.Region.Trim().ToLower().Contains(value.Trim().ToLower()));
@@ -164,7 +171,6 @@ namespace TelemarketingControlSystem.Services.Projects
                     }
                 }
             }
-
 
             return query;
         }
@@ -310,6 +316,12 @@ namespace TelemarketingControlSystem.Services.Projects
                 DistinctValues = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
             };
 
+            ColumnFilter employee = new()
+            {
+                ColumnName = "Employee",
+                DistinctValues = _db.ProjectDetails.Include(e => e.Employee).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
+            };
+
             ColumnFilter generation = new()
             {
                 ColumnName = "Generation",
@@ -346,14 +358,32 @@ namespace TelemarketingControlSystem.Services.Projects
                 DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Bundle).Distinct().ToList()
             };
 
-            result.Add(lineType);
-            result.Add(callStatus);
-            result.Add(generation);
-            result.Add(region);
-            result.Add(city);
-            result.Add(segment);
-            result.Add(subSegment);
-            result.Add(bundle);
+            if (!string.IsNullOrEmpty(lineType.ColumnName))
+                result.Add(lineType);
+
+            if (!string.IsNullOrEmpty(callStatus.ColumnName))
+                result.Add(callStatus);
+
+            if (!string.IsNullOrEmpty(generation.ColumnName))
+                result.Add(generation);
+
+            if (!string.IsNullOrEmpty(region.ColumnName))
+                result.Add(region);
+
+            if (!string.IsNullOrEmpty(city.ColumnName))
+                result.Add(city);
+
+            if (!string.IsNullOrEmpty(segment.ColumnName))
+                result.Add(segment);
+
+            if (!string.IsNullOrEmpty(subSegment.ColumnName))
+                result.Add(subSegment);
+
+            if (!string.IsNullOrEmpty(employee.ColumnName))
+                result.Add(employee);
+
+            if (!string.IsNullOrEmpty(bundle.ColumnName))
+                result.Add(bundle);
 
             return result;
         }
