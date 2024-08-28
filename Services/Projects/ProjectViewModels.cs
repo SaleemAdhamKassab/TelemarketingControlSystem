@@ -32,7 +32,14 @@ namespace TelemarketingControlSystem.Services.Projects
         [Required]
         public string Type { get; set; }
         public List<ProjectDetailViewModel> ProjectDetails { get; set; }
+        public List<ColumnFilter> ColumnFilters { get; set; }
     }
+    public class ColumnFilter
+    {
+        public string ColumnName { get; set; }
+        public List<string> DistinctValues { get; set; }
+    }
+
     public class SharedProjectDetailsAndGSMExcel
     {
         [Required]
@@ -100,8 +107,9 @@ namespace TelemarketingControlSystem.Services.Projects
         public DateTime? DateTo { get; set; }
         public string[]? CreatedBy { get; set; }
         public int[]? TypeIds { get; set; }
-
+        public List<ColumnFilter>? ColumnFilters { get; set; }
     }
+
     public class ListViewModel
     {
         public int Id { get; set; }

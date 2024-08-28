@@ -11,6 +11,7 @@ using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -37,7 +38,6 @@ namespace TelemarketingControlSystem.Services.Projects
         private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
         private readonly IHubContext<NotifiyHub, INotificationService> _notification = notification;
         private readonly IConfiguration _config = config;
-
         private IQueryable<Project> getProjectData(ProjectFilterModel filter, TenantDto authData)
         {
             IQueryable<Project> query;
@@ -80,18 +80,91 @@ namespace TelemarketingControlSystem.Services.Projects
             IQueryable<ProjectDetail> query;
 
             if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-                query = _db.ProjectDetails.Where(e => e.ProjectId == id && !e.IsDeleted);
+                query = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == id && !e.IsDeleted);
             else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
             {
                 Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-                query = _db.ProjectDetails.Where(e => e.ProjectId == id && e.EmployeeId == employee.Id && !e.IsDeleted);
+                query = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == id && e.EmployeeId == employee.Id && !e.IsDeleted);
             }
 
             else
                 return null;
 
             if (!string.IsNullOrEmpty(filter.SearchQuery))
-                query = query.Where(e => e.GSM.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
+                query = query.Where(e => e.GSM.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
+                                         e.Contract.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
+                                         e.AlternativeNumber.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
+                                         e.Note.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
+
+            if (filter.ColumnFilters is not null && filter.ColumnFilters.Count > 0)
+            {
+                foreach (ColumnFilter columnFilter in filter.ColumnFilters)
+                {
+                    switch (columnFilter.ColumnName)
+                    {
+                        case "LineType":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.LineType.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        case "CallStatus":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.CallStatus.Name.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        case "Generation":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.Generation.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        case "Region":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.Region.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+
+                        case "City":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.City.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        case "Segment":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.Segment.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        case "SubSegment":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.SubSegment.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        case "Bundle":
+                            foreach (string value in columnFilter.DistinctValues)
+                            {
+                                query = query.Where(e => e.Bundle.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            }
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+
 
             return query;
         }
@@ -221,8 +294,72 @@ namespace TelemarketingControlSystem.Services.Projects
 
             }
         }
-       
-        
+        private List<ColumnFilter> getProjectDetailsColumnFilters(int projectId)
+        {
+            List<ColumnFilter> result = [];
+
+            ColumnFilter lineType = new()
+            {
+                ColumnName = "LineType",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.LineType).Distinct().ToList()
+            };
+
+            ColumnFilter callStatus = new()
+            {
+                ColumnName = "CallStatus",
+                DistinctValues = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
+            };
+
+            ColumnFilter generation = new()
+            {
+                ColumnName = "Generation",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Generation).Distinct().ToList()
+            };
+
+            ColumnFilter region = new()
+            {
+                ColumnName = "Region",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Region).Distinct().ToList()
+            };
+
+            ColumnFilter city = new()
+            {
+                ColumnName = "City",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.City).Distinct().ToList()
+            };
+
+            ColumnFilter segment = new()
+            {
+                ColumnName = "Segment",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Segment).Distinct().ToList()
+            };
+
+            ColumnFilter subSegment = new()
+            {
+                ColumnName = "SubSegment",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.SubSegment).Distinct().ToList()
+            };
+
+            ColumnFilter bundle = new()
+            {
+                ColumnName = "Bundle",
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Bundle).Distinct().ToList()
+            };
+
+            result.Add(lineType);
+            result.Add(callStatus);
+            result.Add(generation);
+            result.Add(region);
+            result.Add(city);
+            result.Add(segment);
+            result.Add(subSegment);
+            result.Add(bundle);
+
+            return result;
+        }
+
+
+
         public List<ListViewModel> convertListToListViewModel(List<string> list)
         {
             List<ListViewModel> result = [];
@@ -286,6 +423,9 @@ namespace TelemarketingControlSystem.Services.Projects
             var resultData = queryViewModel.Skip(filter.PageSize * filter.PageIndex).Take(filter.PageSize).ToList();
 
 
+            // columns filters
+            List<ColumnFilter> columnFilters = getProjectDetailsColumnFilters(project.Id);
+
             //5- return 
             ProjectViewModel model = new()
             {
@@ -297,7 +437,8 @@ namespace TelemarketingControlSystem.Services.Projects
                 TypeId = project.TypeId,
                 Type = projectTypes.ElementAt(project.TypeId - 1),
                 CreatedBy = Utilities.modifyUserName(project.CreatedBy),
-                ProjectDetails = resultData
+                ProjectDetails = resultData,
+                ColumnFilters = columnFilters
             };
 
             return new ResultWithMessage(new DataWithSize(resultSize, model), string.Empty);
