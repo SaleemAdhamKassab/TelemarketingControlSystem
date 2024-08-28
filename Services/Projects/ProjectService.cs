@@ -319,7 +319,7 @@ namespace TelemarketingControlSystem.Services.Projects
             ColumnFilter employee = new()
             {
                 ColumnName = "Employee",
-                DistinctValues = _db.ProjectDetails.Include(e => e.Employee).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Include(e => e.Employee).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Employee.UserName).Distinct().ToList()
             };
 
             ColumnFilter generation = new()
