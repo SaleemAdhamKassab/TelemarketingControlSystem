@@ -358,31 +358,31 @@ namespace TelemarketingControlSystem.Services.Projects
                 DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Bundle).Distinct().ToList()
             };
 
-            if (!string.IsNullOrEmpty(lineType.ColumnName))
+            if (lineType is not null && lineType.DistinctValues.Count > 0)
                 result.Add(lineType);
 
-            if (!string.IsNullOrEmpty(callStatus.ColumnName))
+            if (callStatus is not null && callStatus.DistinctValues.Count > 0)
                 result.Add(callStatus);
 
-            if (!string.IsNullOrEmpty(generation.ColumnName))
+            if (generation is not null && generation.DistinctValues.Count > 0)
                 result.Add(generation);
 
-            if (!string.IsNullOrEmpty(region.ColumnName))
+            if (region is not null && region.DistinctValues.Count > 0)
                 result.Add(region);
 
-            if (!string.IsNullOrEmpty(city.ColumnName))
+            if (city is not null && city.DistinctValues.Count > 0)
                 result.Add(city);
 
-            if (!string.IsNullOrEmpty(segment.ColumnName))
+            if (segment is not null && segment.DistinctValues.Count > 0)
                 result.Add(segment);
 
-            if (!string.IsNullOrEmpty(subSegment.ColumnName))
+            if (subSegment is not null && subSegment.DistinctValues.Count > 0)
                 result.Add(subSegment);
 
-            if (!string.IsNullOrEmpty(employee.ColumnName))
+            if (employee is not null && employee.DistinctValues.Count > 0)
                 result.Add(employee);
 
-            if (!string.IsNullOrEmpty(bundle.ColumnName))
+            if (bundle is not null && bundle.DistinctValues.Count > 0)
                 result.Add(bundle);
 
             return result;
