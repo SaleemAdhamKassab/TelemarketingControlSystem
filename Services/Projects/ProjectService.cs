@@ -307,55 +307,55 @@ namespace TelemarketingControlSystem.Services.Projects
             ColumnFilter lineType = new()
             {
                 ColumnName = "LineType",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.LineType).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.LineType != null).Select(e => e.LineType).Distinct().ToList()
             };
 
             ColumnFilter callStatus = new()
             {
                 ColumnName = "CallStatus",
-                DistinctValues = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == projectId && !e.IsDeleted && e.CallStatus.Name != null).Select(e => e.CallStatus.Name).Distinct().ToList()
             };
 
             ColumnFilter employee = new()
             {
                 ColumnName = "Employee",
-                DistinctValues = _db.ProjectDetails.Include(e => e.Employee).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => Utilities.modifyUserName(e.Employee.UserName)).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Include(e => e.Employee).Where(e => e.ProjectId == projectId && !e.IsDeleted && e.Employee.UserName != null).Select(e => Utilities.modifyUserName(e.Employee.UserName)).Distinct().ToList()
             };
 
             ColumnFilter generation = new()
             {
                 ColumnName = "Generation",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Generation).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.Generation != null).Select(e => e.Generation).Distinct().ToList()
             };
 
             ColumnFilter region = new()
             {
                 ColumnName = "Region",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Region).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.Region != null).Select(e => e.Region).Distinct().ToList()
             };
 
             ColumnFilter city = new()
             {
                 ColumnName = "City",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.City).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.City != null).Select(e => e.City).Distinct().ToList()
             };
 
             ColumnFilter segment = new()
             {
                 ColumnName = "Segment",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Segment).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.Segment != null).Select(e => e.Segment).Distinct().ToList()
             };
 
             ColumnFilter subSegment = new()
             {
                 ColumnName = "SubSegment",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.SubSegment).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.SubSegment != null).Select(e => e.SubSegment).Distinct().ToList()
             };
 
             ColumnFilter bundle = new()
             {
                 ColumnName = "Bundle",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Bundle).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.Bundle != null).Select(e => e.Bundle).Distinct().ToList()
             };
 
             if (lineType is not null && lineType.DistinctValues.Count > 0)
