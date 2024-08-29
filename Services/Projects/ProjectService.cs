@@ -103,67 +103,77 @@ namespace TelemarketingControlSystem.Services.Projects
                     switch (columnFilter.ColumnName)
                     {
                         case "LineType":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.LineType.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.LineType.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(lt => e.LineType.Trim().ToLower().Contains(lt.ToString().Trim().ToLower())));
                             break;
 
                         case "CallStatus":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.CallStatus.Name.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.CallStatus.Name.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(cs => e.CallStatus.Name.Trim().ToLower().Contains(cs.ToString().Trim().ToLower())));
                             break;
 
                         case "Employee":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.Employee.UserName.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.Employee.UserName.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(emp => e.Employee.UserName.Trim().ToLower().Contains(emp.ToString().Trim().ToLower())));
                             break;
 
                         case "Generation":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.Generation.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.Generation.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(gen => e.Generation.Trim().ToLower().Contains(gen.ToString().Trim().ToLower())));
                             break;
 
                         case "Regions":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.Region.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.Region.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(reg => e.Region.Trim().ToLower().Contains(reg.ToString().Trim().ToLower())));
                             break;
 
 
                         case "City":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.City.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.City.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(cit => e.City.Trim().ToLower().Contains(cit.ToString().Trim().ToLower())));
+
                             break;
 
                         case "Segment":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.Segment.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.Segment.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(seg => e.Segment.Trim().ToLower().Contains(seg.ToString().Trim().ToLower())));
                             break;
 
                         case "SubSegment":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.SubSegment.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.SubSegment.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(subS => e.SubSegment.Trim().ToLower().Contains(subS.ToString().Trim().ToLower())));
                             break;
 
                         case "Bundle":
-                            foreach (string value in columnFilter.DistinctValues)
-                            {
-                                query = query.Where(e => e.Bundle.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            }
+                            //foreach (string value in columnFilter.DistinctValues)
+                            //{
+                            //    query = query.Where(e => e.Bundle.Trim().ToLower().Contains(value.Trim().ToLower()));
+                            //}
+                            query = query.Where(e => columnFilter.ColumnName.Any(bun => e.Bundle.Trim().ToLower().Contains(bun.ToString().Trim().ToLower())));
                             break;
 
                         default:
