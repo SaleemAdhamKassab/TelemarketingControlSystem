@@ -80,9 +80,8 @@ namespace TelemarketingControlSystem.Services.Projects
             IQueryable<ProjectDetail> query =
                  _db.ProjectDetails
                  .Where(e => e.ProjectId == id &&
-                       !e.IsDeleted &&
-                       e.LastUpdateDate.Value.Date >= filter.DateFrom.Value.Date &&
-                       e.LastUpdateDate.Value.Date <= filter.DateTo.Value.Date);
+                       !e.IsDeleted);
+
 
             //if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
             //    query = query.Where(e => e.ProjectId == id && !e.IsDeleted);
@@ -94,8 +93,6 @@ namespace TelemarketingControlSystem.Services.Projects
                 query = query.Where(e => e.EmployeeId == employee.Id);
             }
 
-            if (!query.Any())
-                return null;
 
             if (!string.IsNullOrEmpty(filter.SearchQuery))
                 query = query.Where(e => e.GSM.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
@@ -104,8 +101,6 @@ namespace TelemarketingControlSystem.Services.Projects
                                          e.Note.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
                                          e.CreatedBy.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
 
-            if (!query.Any())
-                return null;
             if (filter.ColumnFilters == null)
             {
                 return query;
@@ -407,8 +402,7 @@ namespace TelemarketingControlSystem.Services.Projects
             //1- Apply Filters just search query
             var query = getProjectDetailsData(id, filter, authData);
 
-            if (query == null || !query.Any())
-                return new ResultWithMessage(null, $"No data found");
+        
 
             //2- Generate List View Model
             var queryViewModel = convertProjectDetailToListViewModel(query);
