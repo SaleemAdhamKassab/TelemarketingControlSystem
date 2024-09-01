@@ -77,110 +77,88 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         private IQueryable<ProjectDetail> getProjectDetailsData(int id, ProjectFilterModel filter, TenantDto authData)
         {
-            IQueryable<ProjectDetail> query;
+            IQueryable<ProjectDetail> query =
+                 _db.ProjectDetails
+                 .Where(e => e.ProjectId == id &&
+                       !e.IsDeleted &&
+                       e.LastUpdateDate.Value.Date >= filter.DateFrom.Value.Date &&
+                       e.LastUpdateDate.Value.Date <= filter.DateTo.Value.Date);
 
-            if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-                query = _db.ProjectDetails.Include(e => e.CallStatus).Include(e => e.Employee).Where(e => e.ProjectId == id && !e.IsDeleted);
-            else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
+            //if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
+            //    query = query.Where(e => e.ProjectId == id && !e.IsDeleted);
+            //else 
+
+            if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
             {
                 Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
-                query = _db.ProjectDetails.Include(e => e.CallStatus).Include(e => e.Employee).Where(e => e.ProjectId == id && e.EmployeeId == employee.Id && !e.IsDeleted);
+                query = query.Where(e => e.EmployeeId == employee.Id);
             }
 
-            else
+            if (!query.Any())
                 return null;
 
             if (!string.IsNullOrEmpty(filter.SearchQuery))
                 query = query.Where(e => e.GSM.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
                                          e.Contract.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
                                          e.AlternativeNumber.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
-                                         e.Note.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
+                                         e.Note.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
+                                         e.CreatedBy.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
 
-            if (filter.ColumnFilters is not null && filter.ColumnFilters.Count > 0)
+            if (!query.Any())
+                return null;
+            if (filter.ColumnFilters == null)
             {
-                foreach (ColumnFilter columnFilter in filter.ColumnFilters)
+                return query;
+            }
+
+            foreach (ColumnFilter columnFilter in filter.ColumnFilters)
+            {
+                if (columnFilter.ColumnName == "LineType" && columnFilter.DistinctValues.Count > 0)
                 {
-                    switch (columnFilter.ColumnName)
-                    {
-                        case "LineType":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.LineType.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(lt => e.LineType.Trim().ToLower().Contains(lt.ToString().Trim().ToLower())));
-                            break;
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.LineType) : false) || columnFilter.DistinctValues.Contains(x.LineType));
+                }
 
-                        case "CallStatus":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.CallStatus.Name.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(cs => e.CallStatus.Name.Trim().ToLower().Contains(cs.ToString().Trim().ToLower())));
-                            break;
+                if (columnFilter.ColumnName == "CallStatus" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains(x.CallStatus.Name)));
+                }
 
-                        case "Employee":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.Employee.UserName.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(emp => e.Employee.UserName.Trim().ToLower().Contains(emp.ToString().Trim().ToLower())));
-                            break;
+                if (columnFilter.ColumnName == "Employee" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains(x.Employee.Name)));
+                }
 
-                        case "Generation":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.Generation.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(gen => e.Generation.Trim().ToLower().Contains(gen.ToString().Trim().ToLower())));
-                            break;
+                if (columnFilter.ColumnName == "Generation" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.Generation) : false) || columnFilter.DistinctValues.Contains(x.Generation));
+                }
 
-                        case "Regions":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.Region.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(reg => e.Region.Trim().ToLower().Contains(reg.ToString().Trim().ToLower())));
-                            break;
+                if (columnFilter.ColumnName == "Region" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.Region) : false) || columnFilter.DistinctValues.Contains(x.Region));
+                }
 
+                if (columnFilter.ColumnName == "City" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.City) : false) || columnFilter.DistinctValues.Contains(x.City));
+                }
 
-                        case "City":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.City.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(cit => e.City.Trim().ToLower().Contains(cit.ToString().Trim().ToLower())));
+                if (columnFilter.ColumnName == "Segment" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.Segment) : false) || columnFilter.DistinctValues.Contains(x.Segment));
+                }
 
-                            break;
+                if (columnFilter.ColumnName == "SubSegment" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.SubSegment) : false) || columnFilter.DistinctValues.Contains(x.SubSegment));
+                }
 
-                        case "Segment":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.Segment.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(seg => e.Segment.Trim().ToLower().Contains(seg.ToString().Trim().ToLower())));
-                            break;
-
-                        case "SubSegment":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.SubSegment.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(subS => e.SubSegment.Trim().ToLower().Contains(subS.ToString().Trim().ToLower())));
-                            break;
-
-                        case "Bundle":
-                            //foreach (string value in columnFilter.DistinctValues)
-                            //{
-                            //    query = query.Where(e => e.Bundle.Trim().ToLower().Contains(value.Trim().ToLower()));
-                            //}
-                            query = query.Where(e => columnFilter.ColumnName.Any(bun => e.Bundle.Trim().ToLower().Contains(bun.ToString().Trim().ToLower())));
-                            break;
-
-                        default:
-                            break;
-                    }
+                if (columnFilter.ColumnName == "Bundle" && columnFilter.DistinctValues.Count > 0)
+                {
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.Bundle) : false) || columnFilter.DistinctValues.Contains(x.Bundle));
                 }
             }
+
 
             return query;
         }
@@ -317,83 +295,66 @@ namespace TelemarketingControlSystem.Services.Projects
             ColumnFilter lineType = new()
             {
                 ColumnName = "LineType",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.LineType).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.LineType)).Select(e => e.LineType).Distinct().ToList()
             };
 
             ColumnFilter callStatus = new()
             {
                 ColumnName = "CallStatus",
-                DistinctValues = _db.ProjectDetails.Include(e => e.CallStatus).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.CallStatus.Name).Distinct().ToList()
             };
 
             ColumnFilter employee = new()
             {
                 ColumnName = "Employee",
-                DistinctValues = _db.ProjectDetails.Include(e => e.Employee).Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => Utilities.modifyUserName(e.Employee.UserName)).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => Utilities.modifyUserName(e.Employee.UserName)).Distinct().ToList()
             };
 
             ColumnFilter generation = new()
             {
                 ColumnName = "Generation",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Generation).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.Generation)).Select(e => e.Generation).Distinct().ToList()
             };
 
             ColumnFilter region = new()
             {
                 ColumnName = "Region",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Region).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.Region)).Select(e => e.Region).Distinct().ToList()
             };
 
             ColumnFilter city = new()
             {
                 ColumnName = "City",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.City).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.City)).Select(e => e.City).Distinct().ToList()
             };
 
             ColumnFilter segment = new()
             {
                 ColumnName = "Segment",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Segment).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.Segment)).Select(e => e.Segment).Distinct().ToList()
             };
 
             ColumnFilter subSegment = new()
             {
                 ColumnName = "SubSegment",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.SubSegment).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.SubSegment)).Select(e => e.SubSegment).Distinct().ToList()
             };
 
             ColumnFilter bundle = new()
             {
                 ColumnName = "Bundle",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted).Select(e => e.Bundle).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.Bundle)).Select(e => e.Bundle).Distinct().ToList()
             };
 
-            if (lineType is not null && lineType.DistinctValues.Count > 0)
-                result.Add(lineType);
-
-            if (callStatus is not null && callStatus.DistinctValues.Count > 0)
-                result.Add(callStatus);
-
-            if (generation is not null && generation.DistinctValues.Count > 0)
-                result.Add(generation);
-
-            if (region is not null && region.DistinctValues.Count > 0)
-                result.Add(region);
-
-            if (city is not null && city.DistinctValues.Count > 0)
-                result.Add(city);
-
-            if (segment is not null && segment.DistinctValues.Count > 0)
-                result.Add(segment);
-
-            if (subSegment is not null && subSegment.DistinctValues.Count > 0)
-                result.Add(subSegment);
-
-            if (employee is not null && employee.DistinctValues.Count > 0)
-                result.Add(employee);
-
-            if (bundle is not null && bundle.DistinctValues.Count > 0)
-                result.Add(bundle);
+            result.Add(lineType);
+            result.Add(callStatus);
+            result.Add(generation);
+            result.Add(region);
+            result.Add(city);
+            result.Add(segment);
+            result.Add(subSegment);
+            result.Add(employee);
+            result.Add(bundle);
 
             return result;
         }
@@ -446,16 +407,19 @@ namespace TelemarketingControlSystem.Services.Projects
             //1- Apply Filters just search query
             var query = getProjectDetailsData(id, filter, authData);
 
+            if (query == null || !query.Any())
+                return new ResultWithMessage(null, $"No data found");
+
             //2- Generate List View Model
             var queryViewModel = convertProjectDetailToListViewModel(query);
 
             //3- Sorting using our extension
-            filter.SortActive = filter.SortActive == string.Empty ? "ID" : filter.SortActive;
+            //filter.SortActive = filter.SortActive == string.Empty ? "ID" : filter.SortActive;
 
-            if (filter.SortDirection == enSortDirection.desc.ToString())
-                queryViewModel = queryViewModel.OrderByDescending(filter.SortActive);
-            else
-                queryViewModel = queryViewModel.OrderBy(filter.SortActive);
+            //if (filter.SortDirection == enSortDirection.desc.ToString())
+            //    queryViewModel = queryViewModel.OrderByDescending(filter.SortActive);
+            //else
+            //    queryViewModel = queryViewModel.OrderBy(filter.SortActive);
 
 
             //4- pagination
@@ -754,7 +718,7 @@ namespace TelemarketingControlSystem.Services.Projects
                    CreatedBy = Utilities.modifyUserName(e.CreatedBy),
                    Region = e.Region,
                    LineType = e.LineType,
-                   AddedOn = e.AddedOn,
+                   AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
                    AlternativeNumber = e.AlternativeNumber,
                    Bundle = e.Bundle,
                    CallStatus = e.CallStatus.Name,
@@ -764,7 +728,6 @@ namespace TelemarketingControlSystem.Services.Projects
                    Generation = e.Generation,
                    GSM = e.GSM,
                    LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
-                   LastUpdatedDate = e.LastUpdateDate,
                    Note = e.Note,
                    Segment = e.Segment,
                    SubSegment = e.SubSegment
@@ -785,7 +748,7 @@ namespace TelemarketingControlSystem.Services.Projects
                .Select(e => new ProjectDataToExcel
                {
                    Name = e.Name,
-                   AddedOn = e.AddedOn,
+                   AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
                    DateFrom = e.DateFrom,
                    DateTo = e.DateTo,
                    Quota = e.Quota,

@@ -121,7 +121,7 @@ namespace TelemarketingControlSystem.Services.Projects
         public DateTime DateFrom { get; set; }
         public DateTime DateTo { get; set; }
         public int Quota { get; set; }
-        public DateTime AddedOn { get; set; }
+        public string AddedOn { get; set; }
         public string Type { get; set; }
     }
     public class ProjectDetailsDataToExcel
@@ -141,8 +141,7 @@ namespace TelemarketingControlSystem.Services.Projects
         public string Note { get; set; }
         public string Employee { get; set; }
         public string CallStatus { get; set; }
-        public DateTime AddedOn { get; set; }
+        public string AddedOn { get; set; }
         public string LastUpdatedby { get; set; }
-        public DateTime? LastUpdatedDate { get; set; }
     }
 }
