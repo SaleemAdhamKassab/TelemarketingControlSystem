@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
-using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.Projects;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
@@ -81,7 +80,7 @@ namespace TelemarketingControlSystem.Controllers
         [HttpGet("exportProjectDetailsToExcel")]
         public IActionResult exportProjectDetailsToExcel(int projectId)
         {
-            var excelData = _projectService.exportProjectDetailsToExcel(projectId);
+            var excelData = _projectService.exportProjectDetailsToExcel(projectId, authData());
             if (!string.IsNullOrEmpty(excelData.Message))
                 return BadRequest(excelData.Message);
 

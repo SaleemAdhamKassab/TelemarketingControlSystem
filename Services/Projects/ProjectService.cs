@@ -12,6 +12,8 @@ using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using System.Drawing.Drawing2D;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -28,7 +30,7 @@ namespace TelemarketingControlSystem.Services.Projects
         Task<ResultWithMessage> delete(int id, TenantDto authData);
         Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
         Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
-        ByteResultWithMessage exportProjectDetailsToExcel(int projectId);
+        ByteResultWithMessage exportProjectDetailsToExcel(int projectId, TenantDto tenantDto);
         ByteResultWithMessage exportProjectsToExcel();
     }
 
@@ -79,6 +81,7 @@ namespace TelemarketingControlSystem.Services.Projects
         {
             IQueryable<ProjectDetail> query =
                  _db.ProjectDetails
+                 .Include(e => e.Employee)
                  .Where(e => e.ProjectId == id &&
                        !e.IsDeleted);
 
@@ -120,7 +123,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
                 if (columnFilter.ColumnName == "Employee" && columnFilter.DistinctValues.Count > 0)
                 {
-                    query = query.Where(x => (columnFilter.DistinctValues.Contains(x.Employee.Name)));
+                    query = query.Where(x => (columnFilter.DistinctValues.Select(u => "syriatel\\" + u.ToLower()).Contains(x.Employee.UserName.ToLower())));
                 }
 
                 if (columnFilter.ColumnName == "Generation" && columnFilter.DistinctValues.Count > 0)
@@ -402,7 +405,7 @@ namespace TelemarketingControlSystem.Services.Projects
             //1- Apply Filters just search query
             var query = getProjectDetailsData(id, filter, authData);
 
-        
+
 
             //2- Generate List View Model
             var queryViewModel = convertProjectDetailToListViewModel(query);
@@ -697,42 +700,42 @@ namespace TelemarketingControlSystem.Services.Projects
                 return new ResultWithMessage(null, e.Message);
             }
         }
-        public ByteResultWithMessage exportProjectDetailsToExcel(int projectId)
+        public ByteResultWithMessage exportProjectDetailsToExcel(int projectId, TenantDto authData)
         {
-            Project project = _db.Projects.Find(projectId);
-            if (project is null)
+            var query = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted);
+            if (!query.Any())
                 return new ByteResultWithMessage(null, $"Invalid project Id: {projectId}");
 
-            var data = _db.ProjectDetails
-               .Where(e => e.ProjectId == projectId)
-               .Include(e => e.Project)
-               .Select(e => new ProjectDetailsDataToExcel
-               {
-                   Project = e.Project.Name,
-                   CreatedBy = Utilities.modifyUserName(e.CreatedBy),
-                   Region = e.Region,
-                   LineType = e.LineType,
-                   AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
-                   AlternativeNumber = e.AlternativeNumber,
-                   Bundle = e.Bundle,
-                   CallStatus = e.CallStatus.Name,
-                   City = e.City,
-                   Contract = e.Contract,
-                   Employee = Utilities.modifyUserName(e.Employee.UserName),
-                   Generation = e.Generation,
-                   GSM = e.GSM,
-                   LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
-                   Note = e.Note,
-                   Segment = e.Segment,
-                   SubSegment = e.SubSegment
-               })
-               .ToList();
 
-            if (data.Count == 0)
-                return new ByteResultWithMessage(null, $"No data found");
+            if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
+            {
+                Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
+                query = query.Where(e => e.EmployeeId == employee.Id);
+            }
+
+            List<ProjectDetailsDataToExcel> projectDetailsDataToExcels = [.. query.Select(e => new ProjectDetailsDataToExcel
+            {
+                Project = e.Project.Name,
+                CreatedBy = Utilities.modifyUserName(e.CreatedBy),
+                Region = e.Region,
+                LineType = e.LineType,
+                AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
+                AlternativeNumber = e.AlternativeNumber,
+                Bundle = e.Bundle,
+                CallStatus = e.CallStatus.Name,
+                City = e.City,
+                Contract = e.Contract,
+                Employee = Utilities.modifyUserName(e.Employee.UserName),
+                Generation = e.Generation,
+                GSM = e.GSM,
+                LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
+                Note = e.Note,
+                Segment = e.Segment,
+                SubSegment = e.SubSegment
+            })];
 
             var exportService = new ExportService();
-            byte[] excelData = exportService.ExportToExcel(data, "Project Details");
+            byte[] excelData = exportService.ExportToExcel(projectDetailsDataToExcels, "Project Details");
 
             return new ByteResultWithMessage(excelData, string.Empty);
         }
