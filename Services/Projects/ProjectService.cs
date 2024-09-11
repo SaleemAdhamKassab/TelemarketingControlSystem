@@ -11,9 +11,6 @@ using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using System.Drawing.Drawing2D;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
@@ -60,19 +57,16 @@ namespace TelemarketingControlSystem.Services.Projects
                               || e.Id.ToString().Contains(filter.SearchQuery.Trim().ToLower()));
 
             if (filter.DateFrom != null && filter.DateTo != null)
-            {
                 query = query.Where(x => x.DateFrom >= filter.DateFrom && x.DateTo <= filter.DateTo);
-            }
+
 
             if (filter.CreatedBy != null && filter.CreatedBy.Count() != 0)
-            {
                 query = query.Where(x => filter.CreatedBy.Contains(x.CreatedBy));
-            }
+
 
             if (filter.TypeIds != null && filter.TypeIds.Count() != 0)
-            {
-                query = query.Where(x => filter.TypeIds.Contains(x.TypeId));
-            }
+                query = query.Where(x => filter.TypeIds.Contains(x.ProjectTypeId));
+
 
 
             return query;
@@ -143,7 +137,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
                 if (columnFilter.ColumnName == "Segment" && columnFilter.DistinctValues.Count > 0)
                 {
-                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.Segment) : false) || columnFilter.DistinctValues.Contains(x.Segment));
+                    query = query.Where(x => (columnFilter.DistinctValues.Contains("NA") ? string.IsNullOrEmpty(x.SegmentName) : false) || columnFilter.DistinctValues.Contains(x.SegmentName));
                 }
 
                 if (columnFilter.ColumnName == "SubSegment" && columnFilter.DistinctValues.Count > 0)
@@ -168,8 +162,10 @@ namespace TelemarketingControlSystem.Services.Projects
               DateFrom = e.DateFrom,
               DateTo = e.DateTo,
               Quota = e.Quota,
-              TypeId = e.TypeId,
-              Type = projectTypes.ElementAt(e.TypeId - 1),
+              //TypeId = e.TypeId,
+              TypeId = e.ProjectTypeId,
+              //Type = projectTypes.ElementAt(e.TypeId - 1),
+              Type = e.ProjectType.Name,
               CreatedBy = Utilities.modifyUserName(e.CreatedBy)
           });
         private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
@@ -184,7 +180,8 @@ namespace TelemarketingControlSystem.Services.Projects
                 Generation = e.Generation,
                 Region = e.Region,
                 City = e.City,
-                Segment = e.Segment,
+                //Segment = e.Segment,
+                Segment = e.SegmentName,
                 SubSegment = e.SubSegment,
                 Bundle = e.Bundle,
                 Contract = e.Contract,
@@ -282,8 +279,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
                     });
                 }
-
-
             }
         }
         private List<ColumnFilter> getProjectDetailsColumnFilters(int projectId)
@@ -329,7 +324,8 @@ namespace TelemarketingControlSystem.Services.Projects
             ColumnFilter segment = new()
             {
                 ColumnName = "Segment",
-                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.Segment)).Select(e => e.Segment).Distinct().ToList()
+                //DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.Segment)).Select(e => e.Segment).Distinct().ToList()
+                DistinctValues = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted && !string.IsNullOrEmpty(e.SegmentName)).Select(e => e.SegmentName).Distinct().ToList()
             };
 
             ColumnFilter subSegment = new()
@@ -377,7 +373,17 @@ namespace TelemarketingControlSystem.Services.Projects
 
             return result.OrderBy(e => e.Name).ToList();
         }
-        public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
+        //public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
+        public ResultWithMessage getProjectTypes()
+        {
+            var projectTypes = _db.ProjectTypes.Select(e => new ListViewModel
+            {
+                Id = e.Id,
+                Name = e.Name
+            }).ToList();
+
+            return new ResultWithMessage(projectTypes, string.Empty);
+        }
         public ResultWithMessage getRegions() => new(convertListToListViewModel(regions), string.Empty);
         public ResultWithMessage getCallStatuses() => new ResultWithMessage(_db.CallStatuses.ToList(), string.Empty);
         public ResultWithMessage getEmployees()
@@ -435,8 +441,10 @@ namespace TelemarketingControlSystem.Services.Projects
                 DateFrom = project.DateFrom,
                 DateTo = project.DateTo,
                 Quota = project.Quota,
-                TypeId = project.TypeId,
-                Type = projectTypes.ElementAt(project.TypeId - 1),
+                //TypeId = project.TypeId,
+                TypeId = project.ProjectTypeId,
+                //Type = projectTypes.ElementAt(project.TypeId - 1),
+                Type = project.ProjectType.Name,
                 CreatedBy = Utilities.modifyUserName(project.CreatedBy),
                 ProjectDetails = resultData,
                 ColumnFilters = columnFilters
@@ -504,7 +512,8 @@ namespace TelemarketingControlSystem.Services.Projects
                     Quota = model.Quota,
                     CreatedBy = authData.userName,
                     AddedOn = DateTime.Now,
-                    TypeId = model.TypeId,
+                    //TypeId = model.TypeId,
+                    ProjectTypeId = model.TypeId,
                     ProjectDetails = []
                 };
 
@@ -529,7 +538,7 @@ namespace TelemarketingControlSystem.Services.Projects
                         Generation = gsmExcel.Generation,
                         Region = gsmExcel.Region,
                         City = gsmExcel.City,
-                        Segment = gsmExcel.Segment,
+                        SegmentName = gsmExcel.Segment,
                         SubSegment = gsmExcel.SubSegment,
                         Bundle = gsmExcel.Bundle,
                         Contract = gsmExcel.Contract,
@@ -578,7 +587,8 @@ namespace TelemarketingControlSystem.Services.Projects
                     projectToUpdate.DateFrom = model.DateFrom;
                     projectToUpdate.DateTo = model.DateTo;
                     projectToUpdate.Quota = model.Quota;
-                    projectToUpdate.TypeId = model.TypeId;
+                    //projectToUpdate.TypeId = model.TypeId;
+                    projectToUpdate.ProjectTypeId = model.TypeId;
                     projectToUpdate.LastUpdatedBy = authData.userName;
                     projectToUpdate.LastUpdateDate = DateTime.Now;
                 }
@@ -730,7 +740,7 @@ namespace TelemarketingControlSystem.Services.Projects
                 GSM = e.GSM,
                 LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
                 Note = e.Note,
-                Segment = e.Segment,
+                Segment = e.SegmentName,
                 SubSegment = e.SubSegment
             })];
 
@@ -741,7 +751,7 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         public ByteResultWithMessage exportProjectsToExcel()
         {
-            var data = _db.Projects
+            var data = _db.Projects.Include(e => e.ProjectType)
                .Select(e => new ProjectDataToExcel
                {
                    Name = e.Name,
@@ -749,9 +759,9 @@ namespace TelemarketingControlSystem.Services.Projects
                    DateFrom = e.DateFrom,
                    DateTo = e.DateTo,
                    Quota = e.Quota,
-                   Type = projectTypes.ElementAt(e.TypeId)
-               })
-               .ToList();
+                   //Type = projectTypes.ElementAt(e.TypeId)
+                   Type = e.ProjectType.Name
+               }).ToList();
 
             if (data.Count == 0)
                 return new ByteResultWithMessage(null, $"No data found");

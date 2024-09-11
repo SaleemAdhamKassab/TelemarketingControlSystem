@@ -44,7 +44,7 @@ namespace TelemarketingControlSystem.Services.Projects
     {
         [Required]
         public string GSM { get; set; }
-        public string? Segment { get; set; }
+        public string Segment { get; set; }
         public string? SubSegment { get; set; }
         public string? Bundle { get; set; }
         public string? Contract { get; set; }

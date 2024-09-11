@@ -4,7 +4,6 @@ using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.ProjectStatistics.ProjectStatisticsViewModels;
 using System.Linq.Expressions;
-using NPOI.SS.Formula.Functions;
 
 namespace TelemarketingControlSystem.Services.ProjectStatistics
 {
@@ -26,10 +25,10 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
                 .Where(e => e.ProjectId == generalReportDto.ProjectId &&
                             e.LastUpdateDate >= generalReportDto.DateFrom &&
                             e.LastUpdateDate <= generalReportDto.DateTo &&
-                            !e.IsDeleted)
-                .Include(e => e.Project)
-                .Include(e => e.CallStatus)
-                .Include(e => e.Employee);
+                            !e.IsDeleted);
+            //.Include(e => e.Project)
+            //.Include(e => e.CallStatus)
+            //.Include(e => e.Employee);
 
             var predicates = new List<Expression<Func<ProjectDetail, bool>>>();
 
@@ -52,7 +51,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatistics
                 predicates.Add(e => e.City.ToLower().Contains(generalReportDto.City.ToLower()));
 
             if (!string.IsNullOrEmpty(generalReportDto.Segment))
-                predicates.Add(e => e.Segment.ToLower().Contains(generalReportDto.Segment.ToLower()));
+                predicates.Add(e => e.SegmentName.ToLower().Contains(generalReportDto.Segment.ToLower()));
 
             if (!string.IsNullOrEmpty(generalReportDto.SubSegment))
                 predicates.Add(e => e.SubSegment.ToLower().Contains(generalReportDto.SubSegment.ToLower()));

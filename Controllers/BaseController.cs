@@ -12,7 +12,7 @@ namespace TelemarketingControlSystem.Controllers
 			if (string.IsNullOrEmpty(result.Message))
 				return Ok(result.Data);
 
-			else return BadRequest(new { message = result.Message });
+			return BadRequest(new { message = result.Message });
 		}
 	}
 }

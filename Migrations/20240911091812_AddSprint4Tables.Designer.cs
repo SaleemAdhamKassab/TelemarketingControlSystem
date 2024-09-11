@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TelemarketingControlSystem.Models.Data;
 
@@ -11,9 +12,11 @@ using TelemarketingControlSystem.Models.Data;
 namespace TelemarketingControlSystem.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240911091812_AddSprint4Tables")]
+    partial class AddSprint4Tables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -622,9 +625,10 @@ namespace TelemarketingControlSystem.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("LastUpdatedBy")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("LastUpdatedDate")
+                    b.Property<DateTime>("LastUpdatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("ProjectId")
@@ -706,9 +710,10 @@ namespace TelemarketingControlSystem.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("LastUpdatedBy")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime?>("LastUpdatedDate")
+                    b.Property<DateTime>("LastUpdatedDate")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("ProjectTypeId")
