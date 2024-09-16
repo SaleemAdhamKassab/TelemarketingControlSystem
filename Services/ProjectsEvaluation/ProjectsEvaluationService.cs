@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Drawing.Drawing2D;
 using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
@@ -15,6 +17,54 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
     public class ProjectsEvaluationService(ApplicationDbContext db) : IProjectsEvaluationService
     {
         private readonly ApplicationDbContext _db = db;
+        private void disableOldDictionary(List<TypeDictionary> typeDictionariesToDelete, string userName)
+        {
+            foreach (TypeDictionary typeDictionary in typeDictionariesToDelete)
+            {
+                typeDictionary.IsDeleted = true;
+                typeDictionary.LastUpdatedBy = userName;
+                typeDictionary.LastUpdatedDate = DateTime.Now;
+            }
+            _db.UpdateRange(typeDictionariesToDelete);
+        }
+        private List<TypeDictionary> getTypeDictionariesRange(int projecttypeId, List<DictionaryRange> dictionaryRanges, string userName)
+        {
+            List<TypeDictionary> typeDictionaries = [];
+            foreach (DictionaryRange dictionaryRange in dictionaryRanges)
+            {
+                TypeDictionary typeDictionary = new()
+                {
+                    RangFrom = dictionaryRange.RangFrom,
+                    RangTo = dictionaryRange.RangTo,
+                    Value = dictionaryRange.Value,
+                    IsDeleted = false,
+                    CreatedBy = userName,
+                    AddedOn = DateTime.Now,
+                    ProjectTypeId = projecttypeId
+                };
+
+                typeDictionaries.Add(typeDictionary);
+            }
+
+            return typeDictionaries;
+        }
+        private bool isValidRanges(List<DictionaryRange> dictionaryRanges)
+        {
+            List<double> ranges = [];
+
+            foreach (DictionaryRange range in dictionaryRanges)
+            {
+                ranges.Add(range.RangFrom);
+                ranges.Add(range.RangTo);
+            }
+
+            List<double> sortedRanges = ranges.OrderBy(e => e).ToList();
+
+            if (ranges.SequenceEqual(sortedRanges))
+                return true;
+
+            return false;
+        }
 
         public ResultWithMessage getProjectTypeDictionary(int projecTypeId)
         {
@@ -58,35 +108,17 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
             if (typeDictionariesToDelete.Count == 0)
                 return new ResultWithMessage(null, $"No dictionary found to delete with Id : {updateProjectTypeDictionaryDto.ProjectTypeId}");
 
+            //1) Validate range sequence
+            if (!isValidRanges(updateProjectTypeDictionaryDto.DictionaryRanges))
+                return new ResultWithMessage(null, "Invalid ranges");
 
-            //Disable old dictionary
-            foreach (TypeDictionary typeDictionary in typeDictionariesToDelete)
-            {
-                typeDictionary.IsDeleted = true;
-                typeDictionary.LastUpdatedBy = authData.userName;
-                typeDictionary.LastUpdatedDate = DateTime.Now;
-            }
-            _db.UpdateRange(typeDictionariesToDelete);
+            //2) Disable old dictionary
+            disableOldDictionary(typeDictionariesToDelete, authData.userName);
 
-            //Add new dictionary
-            List<TypeDictionary> typeDictionariesToCreate = [];
-            foreach (DictionaryRange dictionaryRange in updateProjectTypeDictionaryDto.DictionaryRanges)
-            {
-                TypeDictionary typeDictionary = new()
-                {
-                    RangFrom = dictionaryRange.RangFrom,
-                    RangTo = dictionaryRange.RangTo,
-                    Value = dictionaryRange.Value,
-                    IsDeleted = false,
-                    CreatedBy = authData.userName,
-                    AddedOn = DateTime.Now,
-                    ProjectTypeId = updateProjectTypeDictionaryDto.ProjectTypeId
-                };
+            //3) Add new dictionary
+            List<TypeDictionary> TypeDictionariesRange = getTypeDictionariesRange(updateProjectTypeDictionaryDto.ProjectTypeId, updateProjectTypeDictionaryDto.DictionaryRanges, authData.userName);
+            _db.TypeDictionaries.AddRange(TypeDictionariesRange);
 
-                typeDictionariesToCreate.Add(typeDictionary);
-            }
-
-            _db.TypeDictionaries.AddRange(typeDictionariesToCreate);
             _db.SaveChanges();
 
             return new ResultWithMessage(null, string.Empty);
