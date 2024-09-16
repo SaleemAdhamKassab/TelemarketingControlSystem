@@ -1,4 +1,5 @@
-﻿using TelemarketingControlSystem.Models;
+﻿using System.Collections.Generic;
+using TelemarketingControlSystem.Models;
 
 namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 {
@@ -16,5 +17,17 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 
         public int ProjectTypeId { get; set; }
         public string ProjectType { get; set; }
+    }
+
+    public class UpdateProjectTypeDictionaryDto
+    {
+        public int ProjectTypeId { get; set; }
+        public List<DictionaryRange> DictionaryRanges { get; set; }
+    }
+    public class DictionaryRange
+    {
+        public double RangFrom { get; set; }
+        public double RangTo { get; set; }
+        public string Value { get; set; }
     }
 }

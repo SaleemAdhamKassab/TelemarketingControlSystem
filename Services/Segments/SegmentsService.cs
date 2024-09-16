@@ -23,7 +23,6 @@ namespace TelemarketingControlSystem.Services.Segments
                 .ToList();
             return new ResultWithMessage(segments, string.Empty);
         }
-
         public ResultWithMessage addSegment(SegmentDto segmentDto, TenantDto authData)
         {
             Segment segment = new()
