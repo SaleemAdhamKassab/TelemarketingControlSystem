@@ -37,6 +37,6 @@ namespace TelemarketingControlSystem.Controllers
 
         [HttpPost("addSegment")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-        public IActionResult addSegment(string name) => _returnResultWithMessage(_segmentsService.addSegment(name, authData()));
+        public IActionResult addSegment(SegmentDto segmentDto) => _returnResultWithMessage(_segmentsService.addSegment(segmentDto, authData()));
     }
 }

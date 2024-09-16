@@ -8,7 +8,7 @@ namespace TelemarketingControlSystem.Services.Segments
     public interface ISegmentsService
     {
         ResultWithMessage getSegments();
-        ResultWithMessage addSegment(string name, TenantDto authData);
+        ResultWithMessage addSegment(SegmentDto segmentDto, TenantDto authData);
     }
     public class SegmentsService(ApplicationDbContext db) : ISegmentsService
     {
@@ -24,11 +24,11 @@ namespace TelemarketingControlSystem.Services.Segments
             return new ResultWithMessage(segments, string.Empty);
         }
 
-        public ResultWithMessage addSegment(string name, TenantDto authData)
+        public ResultWithMessage addSegment(SegmentDto segmentDto, TenantDto authData)
         {
             Segment segment = new()
             {
-                Name = name.Trim(),
+                Name =segmentDto.Name.Trim(),
                 IsDefault = false,
                 CreatedBy = authData.userName,
                 AddedOn = DateTime.Now,
