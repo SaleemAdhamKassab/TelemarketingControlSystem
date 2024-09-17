@@ -117,16 +117,20 @@ namespace TelemarketingControlSystem.Services.Projects
     }
     public class ProjectDataToExcel
     {
+        public int Id { get; set; }
         public string Name { get; set; }
-        public DateTime DateFrom { get; set; }
-        public DateTime DateTo { get; set; }
+        public string DateFrom { get; set; }
+        public string DateTo { get; set; }
         public int Quota { get; set; }
+        public string CreatedBy { get; set; }
         public string AddedOn { get; set; }
         public string Type { get; set; }
+        public string? LastUpdatedBy { get; set; }
+        public string? LastUpdateDate { get; set; }
     }
+
     public class ProjectDetailsDataToExcel
     {
-        public string Project { get; set; }
         public string CreatedBy { get; set; }
         public string GSM { get; set; }
         public string Region { get; set; }
@@ -142,6 +146,7 @@ namespace TelemarketingControlSystem.Services.Projects
         public string Employee { get; set; }
         public string CallStatus { get; set; }
         public string AddedOn { get; set; }
-        public string LastUpdatedby { get; set; }
+        public string? LastUpdatedby { get; set; }
+        public string? LastUpdatedDate { get; set; }
     }
 }

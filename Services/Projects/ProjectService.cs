@@ -213,7 +213,7 @@ namespace TelemarketingControlSystem.Services.Projects
 
             int projectGSMs = _db.ProjectDetails.Where(e => e.ProjectId == model.Id).Count();
             if (model.Quota > projectGSMs)
-                return $"The Quota {model.Quota} should be equal or less than GSMs {projectGSMs}";
+                return $"The Quota {model.Quota} should be equal or less than GSMs count: {projectGSMs}";
 
             return string.Empty;
         }
@@ -403,7 +403,7 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         public ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData)
         {
-            Project project = _db.Projects.Find(id);
+            Project project = _db.Projects.Include(e => e.ProjectType).SingleOrDefault(e => e.Id == id);
             if (project is null)
                 return new ResultWithMessage(null, $"The project with ID: {id} is not Exists");
 
@@ -491,9 +491,13 @@ namespace TelemarketingControlSystem.Services.Projects
                 if (!string.IsNullOrEmpty(validateGsmExcelErrorMessage))
                     return new ResultWithMessage(null, validateGsmExcelErrorMessage);
 
-                var nullGsm = gsmExcelList.Select((z, i) => new { z.GSM, i }).FirstOrDefault(e => e.GSM == null);
+
+
+                //------------------------------- Excel Validations -------------------------------//
+                //1) GSMs validation
+                var nullGsm = gsmExcelList.Select((z, i) => new { z.GSM, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.GSM));
                 if (nullGsm != null)
-                    return new ResultWithMessage(null, $"Empty GSM at row {nullGsm.i}");
+                    return new ResultWithMessage(null, $"Empty GSM at row number: [{nullGsm.i + 2}]");
 
                 var duplication = gsmExcelList.GroupBy(x => x.GSM).Select(z => new
                 {
@@ -502,7 +506,48 @@ namespace TelemarketingControlSystem.Services.Projects
                 }).FirstOrDefault(y => y.count > 1);
 
                 if (duplication != null)
-                    return new ResultWithMessage(null, $"Duplicate GSM {duplication.Key}");
+                    return new ResultWithMessage(null, $"Duplicate GSM: [{duplication.Key}]");
+
+
+                //2) Call Status Validation
+                var nullCallStatus = gsmExcelList.Select((z, i) => new { z.CallStatus, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.CallStatus));
+                if (nullCallStatus != null)
+                    return new ResultWithMessage(null, $"Empty Call Status at row number: [{nullCallStatus.i + 2}]");
+
+                var invalidExcelCallStatuses = gsmExcelList
+                    .Select((z, i) => new { z.CallStatus, i })
+                    .FirstOrDefault(e => !_db.CallStatuses.Any(s => s.Name.Trim().ToLower() == e.CallStatus.Trim().ToLower()));
+
+                if (invalidExcelCallStatuses != null)
+                    return new ResultWithMessage(null, $"Invalid Call Status at row number: {invalidExcelCallStatuses.i + 2}, '{invalidExcelCallStatuses.CallStatus}'");
+
+
+                //3) Regions Validation
+                var nullRegions = gsmExcelList.Select((z, i) => new { z.Region, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.Region));
+                if (nullRegions != null)
+                    return new ResultWithMessage(null, $"Empty Region at row number: [{nullRegions.i + 2}]");
+
+                var invalidExcelRegions = gsmExcelList
+                    .Select((z, i) => new { z.Region, i })
+                    .FirstOrDefault(e => !regions.Any(r => r.Trim().ToLower() == e.Region.Trim().ToLower()));
+
+                if (invalidExcelRegions != null)
+                    return new ResultWithMessage(null, $"Invalid Region at row number: {invalidExcelRegions.i + 2}, '{invalidExcelRegions.Region}'");
+
+
+                //4) Segments Validation
+                var nullSegments = gsmExcelList.Select((z, i) => new { z.Segment, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.Segment));
+                if (nullSegments != null)
+                    return new ResultWithMessage(null, $"Empty Segment at row number: [{nullSegments.i + 2}]");
+
+                var invalidExcelSegments = gsmExcelList
+                    .Select((z, i) => new { z.Segment, i })
+                    .FirstOrDefault(e => !_db.Segments.Any(s => s.Name.Trim().ToLower() == e.Segment.Trim().ToLower()));
+
+                if (invalidExcelSegments != null)
+                    return new ResultWithMessage(null, $"Invalid Segment at row number: {invalidExcelSegments.i + 2}, '{invalidExcelSegments.Segment}'");
+
+                //---------------------------------------------------------------------------------------------//
 
                 Project project = new()
                 {
@@ -712,7 +757,10 @@ namespace TelemarketingControlSystem.Services.Projects
         }
         public ByteResultWithMessage exportProjectDetailsToExcel(int projectId, TenantDto authData)
         {
-            var query = _db.ProjectDetails.Where(e => e.ProjectId == projectId && !e.IsDeleted);
+            var query = _db.ProjectDetails
+                .Include(e => e.Project)
+                .Where(e => e.ProjectId == projectId && !e.IsDeleted);
+
             if (!query.Any())
                 return new ByteResultWithMessage(null, $"Invalid project Id: {projectId}");
 
@@ -725,7 +773,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
             List<ProjectDetailsDataToExcel> projectDetailsDataToExcels = [.. query.Select(e => new ProjectDetailsDataToExcel
             {
-                Project = e.Project.Name,
                 CreatedBy = Utilities.modifyUserName(e.CreatedBy),
                 Region = e.Region,
                 LineType = e.LineType,
@@ -741,26 +788,33 @@ namespace TelemarketingControlSystem.Services.Projects
                 LastUpdatedby = Utilities.modifyUserName(e.LastUpdatedBy),
                 Note = e.Note,
                 Segment = e.SegmentName,
-                SubSegment = e.SubSegment
+                SubSegment = e.SubSegment,
+                LastUpdatedDate = e.LastUpdateDate.Value.ToString("dd/MM/yyyy HH:mm:ss")
             })];
 
+            string projectName = query.FirstOrDefault().Project.Name;
             var exportService = new ExportService();
-            byte[] excelData = exportService.ExportToExcel(projectDetailsDataToExcels, "Project Details");
+            byte[] excelData = exportService.ExportToExcel(projectDetailsDataToExcels, $"{projectName}'s Details");
 
             return new ByteResultWithMessage(excelData, string.Empty);
         }
         public ByteResultWithMessage exportProjectsToExcel()
         {
-            var data = _db.Projects.Include(e => e.ProjectType)
+            var data = _db.Projects
+                .Include(e => e.ProjectType)
+                .Where(e=>!e.IsDeleted)
                .Select(e => new ProjectDataToExcel
                {
+                   Id = e.Id,
                    Name = e.Name,
-                   AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
-                   DateFrom = e.DateFrom,
-                   DateTo = e.DateTo,
+                   Type = e.ProjectType.Name,
+                   DateFrom = e.DateFrom.ToString("dd/MM/yyyy"),
+                   DateTo = e.DateTo.ToString("dd/MM/yyyy"),
                    Quota = e.Quota,
-                   //Type = projectTypes.ElementAt(e.TypeId)
-                   Type = e.ProjectType.Name
+                   CreatedBy = Utilities.modifyUserName(e.CreatedBy),
+                   AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
+                   LastUpdatedBy = Utilities.modifyUserName(e.LastUpdatedBy),
+                   LastUpdateDate = e.LastUpdateDate.Value.ToString("dd/MM/yyyy HH:mm:ss"),
                }).ToList();
 
             if (data.Count == 0)

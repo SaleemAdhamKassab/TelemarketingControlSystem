@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Drawing.Drawing2D;
 using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
@@ -27,7 +25,7 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
             }
             _db.UpdateRange(typeDictionariesToDelete);
         }
-        private List<TypeDictionary> getTypeDictionariesRange(int projecttypeId, List<DictionaryRange> dictionaryRanges, string userName)
+        private List<TypeDictionary> getTypeDictionaryRanges(int projecttypeId, List<DictionaryRange> dictionaryRanges, string userName)
         {
             List<TypeDictionary> typeDictionaries = [];
             foreach (DictionaryRange dictionaryRange in dictionaryRanges)
@@ -116,8 +114,8 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
             disableOldDictionary(typeDictionariesToDelete, authData.userName);
 
             //3) Add new dictionary
-            List<TypeDictionary> TypeDictionariesRange = getTypeDictionariesRange(updateProjectTypeDictionaryDto.ProjectTypeId, updateProjectTypeDictionaryDto.DictionaryRanges, authData.userName);
-            _db.TypeDictionaries.AddRange(TypeDictionariesRange);
+            List<TypeDictionary> typeDictionaryRanges = getTypeDictionaryRanges(updateProjectTypeDictionaryDto.ProjectTypeId, updateProjectTypeDictionaryDto.DictionaryRanges, authData.userName);
+            _db.TypeDictionaries.AddRange(typeDictionaryRanges);
 
             _db.SaveChanges();
 
