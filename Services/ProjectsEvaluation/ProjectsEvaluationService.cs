@@ -8,8 +8,10 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 {
     public interface IProjectsEvaluationService
     {
-        ResultWithMessage getProjectTypeDictionary(int projecTypeId);
+        ResultWithMessage getProjectTypeDictionary(int projectTypeId);
         ResultWithMessage updateProjectTypeDictionary(UpdateProjectTypeDictionaryDto updateProjectTypeDictionaryDto, TenantDto authData);
+        ResultWithMessage getProjectDictionary(int projectId);
+        ResultWithMessage updateProjectDictionary(UpdateProjectDictionaryDto updateProjectDictionaryDto, TenantDto authData);
     }
 
     public class ProjectsEvaluationService(ApplicationDbContext db) : IProjectsEvaluationService
@@ -24,6 +26,16 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
                 typeDictionary.LastUpdatedDate = DateTime.Now;
             }
             _db.UpdateRange(typeDictionariesToDelete);
+        }
+        private void disableProjectOldDictionary(List<ProjectDictionary> projectDictionaries, string userName)
+        {
+            foreach (ProjectDictionary projectDictionary in projectDictionaries)
+            {
+                projectDictionary.IsDeleted = true;
+                projectDictionary.LastUpdatedBy = userName;
+                projectDictionary.LastUpdatedDate = DateTime.Now;
+            }
+            _db.UpdateRange(projectDictionaries);
         }
         private List<TypeDictionary> getTypeDictionaryRanges(int projecttypeId, List<DictionaryRange> dictionaryRanges, string userName)
         {
@@ -46,6 +58,28 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 
             return typeDictionaries;
         }
+        private List<ProjectDictionary> getProjectDictionaryRanges(int projectId, List<DictionaryRange> dictionaryRanges, string userName)
+        {
+            List<ProjectDictionary> projectDictionaries = [];
+            foreach (DictionaryRange dictionaryRange in dictionaryRanges)
+            {
+                ProjectDictionary projectDictionary = new()
+                {
+                    RangFrom = dictionaryRange.RangFrom,
+                    RangTo = dictionaryRange.RangTo,
+                    Value = dictionaryRange.Value,
+                    IsDeleted = false,
+                    CreatedBy = userName,
+                    AddedOn = DateTime.Now,
+                    ProjectId = projectId
+                };
+
+                projectDictionaries.Add(projectDictionary);
+            }
+
+            return projectDictionaries;
+        }
+
         private bool isValidRanges(List<DictionaryRange> dictionaryRanges)
         {
             List<double> ranges = [];
@@ -64,16 +98,16 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
             return false;
         }
 
-        public ResultWithMessage getProjectTypeDictionary(int projecTypeId)
+        public ResultWithMessage getProjectTypeDictionary(int projectTypeId)
         {
-            ProjectType projectType = _db.ProjectTypes.Find(projecTypeId);
+            ProjectType projectType = _db.ProjectTypes.Find(projectTypeId);
 
             if (projectType == null)
-                return new ResultWithMessage(null, $"Invalid project type Id: {projecTypeId}");
+                return new ResultWithMessage(null, $"Invalid project type Id: {projectTypeId}");
 
             List<ProjectTypeDictionaryViewModel> result = _db
                 .TypeDictionaries
-                .Where(e => e.ProjectTypeId == projecTypeId && !e.IsDeleted)
+                .Where(e => e.ProjectTypeId == projectTypeId && !e.IsDeleted)
                 .Include(e => e.ProjectType)
                 .Select(e => new ProjectTypeDictionaryViewModel
                 {
@@ -82,9 +116,9 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
                     RangTo = e.RangTo,
                     Value = e.Value,
                     IsDeleted = e.IsDeleted,
-                    CreatedBy = e.CreatedBy,
+                    CreatedBy = Utilities.modifyUserName(e.CreatedBy),
                     AddedOn = e.AddedOn,
-                    LastUpdatedBy = e.LastUpdatedBy,
+                    LastUpdatedBy = Utilities.modifyUserName(e.LastUpdatedBy),
                     LastUpdatedDate = e.LastUpdatedDate,
                     ProjectTypeId = e.ProjectTypeId,
                     ProjectType = e.ProjectType.Name
@@ -119,7 +153,60 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 
             _db.SaveChanges();
 
-            return new ResultWithMessage(null, string.Empty);
+            return getProjectTypeDictionary(updateProjectTypeDictionaryDto.ProjectTypeId);
+        }
+        public ResultWithMessage getProjectDictionary(int projectId)
+        {
+            Project project = _db.Projects.Find(projectId);
+
+            if (project == null)
+                return new ResultWithMessage(null, $"Invalid project Id: {projectId}");
+
+            List<ProjectDictionaryViewModel> result = _db
+                .ProjectDictionaries
+                .Where(e => e.ProjectId == projectId && !e.IsDeleted)
+                .Include(e => e.Project)
+                .Select(e => new ProjectDictionaryViewModel
+                {
+                    Id = e.Id,
+                    RangFrom = e.RangFrom,
+                    RangTo = e.RangTo,
+                    Value = e.Value,
+                    IsDeleted = e.IsDeleted,
+                    CreatedBy = Utilities.modifyUserName(e.CreatedBy),
+                    AddedOn = e.AddedOn,
+                    LastUpdatedBy = e.LastUpdatedBy,
+                    LastUpdatedDate = e.LastUpdatedDate,
+                    ProjectId = e.ProjectId,
+                    Project = e.Project.Name
+                })
+                .OrderBy(e => e.RangFrom)
+                .ToList();
+
+            return new ResultWithMessage(result, string.Empty);
+        }
+        public ResultWithMessage updateProjectDictionary(UpdateProjectDictionaryDto updateProjectDictionaryDto, TenantDto authData)
+        {
+            Project project = _db.Projects.Find(updateProjectDictionaryDto.projectId);
+
+            if (project is null)
+                return new ResultWithMessage(null, $"Invalid project Id: {updateProjectDictionaryDto.projectId}");
+
+            //1) Validate range sequence
+            if (!isValidRanges(updateProjectDictionaryDto.DictionaryRanges))
+                return new ResultWithMessage(null, "Invalid ranges");
+
+            //2) disable Project old dictionary
+            List<ProjectDictionary> projectDictionariesToDelete = _db.ProjectDictionaries.Where(e => e.ProjectId == updateProjectDictionaryDto.projectId).ToList();
+            disableProjectOldDictionary(projectDictionariesToDelete, authData.userName);
+
+            //3) Add new dictionary
+            List<ProjectDictionary> ProjectDictionaries = getProjectDictionaryRanges(updateProjectDictionaryDto.projectId, updateProjectDictionaryDto.DictionaryRanges, authData.userName);
+            _db.ProjectDictionaries.AddRange(ProjectDictionaries);
+
+            _db.SaveChanges();
+
+            return getProjectDictionary(updateProjectDictionaryDto.projectId);
         }
     }
 }

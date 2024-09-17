@@ -547,7 +547,7 @@ namespace TelemarketingControlSystem.Services.Projects
                 if (invalidExcelSegments != null)
                     return new ResultWithMessage(null, $"Invalid Segment at row number: {invalidExcelSegments.i + 2}, '{invalidExcelSegments.Segment}'");
 
-                //---------------------------------------------------------------------------------------------//
+                //------------------------------- Create Project -------------------------------//
 
                 Project project = new()
                 {
@@ -557,11 +557,13 @@ namespace TelemarketingControlSystem.Services.Projects
                     Quota = model.Quota,
                     CreatedBy = authData.userName,
                     AddedOn = DateTime.Now,
-                    //TypeId = model.TypeId,
                     ProjectTypeId = model.TypeId,
-                    ProjectDetails = []
+                    ProjectDetails = [],
+                    ProjectDictionaries = []
                 };
 
+
+                //1) create project details
                 List<string> employeeIDs = model.EmployeeIDs.Split(',').ToList();
                 int empIndex = -1;
 
@@ -599,6 +601,19 @@ namespace TelemarketingControlSystem.Services.Projects
                     project.ProjectDetails.Add(projectDetail);
                 };
 
+                //2) create project default dictionary
+                ProjectDictionary projectDefaultDictionary = new()
+                {
+                    RangFrom = -99999,
+                    RangTo = 99999,
+                    Value = model.Name + "'s default dictionary",
+                    CreatedBy = authData.userName,
+                    AddedOn = DateTime.Now,
+                };
+
+                project.ProjectDictionaries.Add(projectDefaultDictionary);
+
+                //3) save project
                 _db.Projects.Add(project);
                 _db.SaveChanges();
 
@@ -802,7 +817,7 @@ namespace TelemarketingControlSystem.Services.Projects
         {
             var data = _db.Projects
                 .Include(e => e.ProjectType)
-                .Where(e=>!e.IsDeleted)
+                .Where(e => !e.IsDeleted)
                .Select(e => new ProjectDataToExcel
                {
                    Id = e.Id,

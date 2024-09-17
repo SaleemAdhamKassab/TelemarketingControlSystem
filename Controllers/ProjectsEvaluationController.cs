@@ -34,10 +34,18 @@ namespace TelemarketingControlSystem.Controllers
 
         [HttpGet("getProjectTypeDictionary")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-        public IActionResult getProjectTypeDictionary(int projecTypeId) => _returnResultWithMessage(_projectsEvaluationService.getProjectTypeDictionary(projecTypeId));
+        public IActionResult getProjectTypeDictionary(int projectTypeId) => _returnResultWithMessage(_projectsEvaluationService.getProjectTypeDictionary(projectTypeId));
 
         [HttpPut("updateProjectTypeDictionary")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
         public IActionResult updateProjectTypeDictionary(UpdateProjectTypeDictionaryDto updateProjectTypeDictionaryDto) => _returnResultWithMessage(_projectsEvaluationService.updateProjectTypeDictionary(updateProjectTypeDictionaryDto, authData()));
+
+        [HttpGet("getProjectDictionary")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+        public IActionResult getProjectDictionary(int projectId) => _returnResultWithMessage(_projectsEvaluationService.getProjectDictionary(projectId));
+
+        [HttpPut("updateProjectDictionary")]
+        [TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+        public IActionResult updateProjectDictionary(UpdateProjectDictionaryDto updateProjectDictionaryDto) => _returnResultWithMessage(_projectsEvaluationService.updateProjectDictionary(updateProjectDictionaryDto, authData()));
     }
 }
