@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+    using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.Projects;
@@ -96,5 +97,13 @@ namespace TelemarketingControlSystem.Controllers
 
             return File(excelData.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "Projects.xlsx");
         }
-    }
+
+		[HttpGet("getAdmins")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> getAdmins() => _returnResultWithMessage(_projectService.getAdmins());
+
+		[HttpGet("expectedRemainingDays")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> expectedRemainingDays(int projectId) => _returnResultWithMessage(_projectService.projectExpectedRemainingDays(projectId));
+	}
 }

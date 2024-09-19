@@ -1,12 +1,9 @@
 ﻿using TelemarketingControlSystem.Helper;
 using System.ComponentModel.DataAnnotations;
-using System.Security.AccessControl;
-using TelemarketingControlSystem.Models.Notification;
-using TelemarketingControlSystem.Models;
 
 namespace TelemarketingControlSystem.Services.Projects
 {
-    public class EmployeeViewModel
+	public class EmployeeViewModel
     {
         [Required]
         public int Id { get; set; }
@@ -31,7 +28,9 @@ namespace TelemarketingControlSystem.Services.Projects
         public int TypeId { get; set; }
         [Required]
         public string Type { get; set; }
-        public List<ProjectDetailViewModel> ProjectDetails { get; set; }
+		public bool IsClosed { get; set; }
+
+		public List<ProjectDetailViewModel> ProjectDetails { get; set; }
         public List<ColumnFilter> ColumnFilters { get; set; }
     }
     public class ColumnFilter
@@ -70,7 +69,7 @@ namespace TelemarketingControlSystem.Services.Projects
         public int? CityId { get; set; }
         public int CallStatusId { get; set; }
         public DateTime? LastUpdateDate { get; set; }
-    }
+	}
     public class GSMExcel : SharedProjectDetailsAndGSMExcel { }
     public class UpsertProjectViewModel
     {
@@ -84,7 +83,7 @@ namespace TelemarketingControlSystem.Services.Projects
         public int Quota { get; set; }
         [Required]
         public int TypeId { get; set; }
-    }
+	}
     public class CreateProjectViewModel : UpsertProjectViewModel
     {
         [Required]
@@ -148,5 +147,11 @@ namespace TelemarketingControlSystem.Services.Projects
         public string AddedOn { get; set; }
         public string? LastUpdatedby { get; set; }
         public string? LastUpdatedDate { get; set; }
+    }
+
+    public class projectExpectedRemainingDaysViewModel
+    {
+        public string Key { get; set; }
+        public double RemainingDays { get; set; }
     }
 }
