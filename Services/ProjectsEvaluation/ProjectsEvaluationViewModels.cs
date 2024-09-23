@@ -48,12 +48,6 @@
 		public int projectId { get; set; }
 		public List<DictionaryRange> DictionaryRanges { get; set; }
 	}
-	public class ProjectSegmentEvaluationCards
-	{
-		public ProjectSegmentEvaluationCardDetails TotalWorkingHours { get; set; }
-		public ProjectSegmentEvaluationCardDetails TotalClosed { get; set; }
-		public ProjectSegmentEvaluationCardDetails Target { get; set; }
-	}
 	public class ProjectSegmentEvaluationCardDetails
 	{
 		public string CardTitle { get; set; }

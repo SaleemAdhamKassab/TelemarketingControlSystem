@@ -253,12 +253,11 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 			};
 
 			//4) Result
-			ProjectSegmentEvaluationCards result = new()
-			{
-				TotalWorkingHours = totalWorkingHoursCard,
-				TotalClosed = totalClosedCard,
-				Target = target
-			};
+			List<ProjectSegmentEvaluationCardDetails> result = [];
+			result.Add(totalWorkingHoursCard);
+			result.Add(totalClosedCard);
+			result.Add(target);
+	
 
 			return new ResultWithMessage(result, string.Empty);
 		}
