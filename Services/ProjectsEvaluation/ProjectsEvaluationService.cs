@@ -273,30 +273,46 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 			if (segment is null)
 				return new ResultWithMessage(null, $"Invalid segment name: '{dto.SegmentName}'");
 
-			IQueryable<EmployeeWorkingHour> query = _db.EmployeeWorkingHours
-				.Include(e => e.Project)
-				.ThenInclude(e => e.ProjectDetails)
-				.ThenInclude(e => e.Employee)
-				.Where(e => e.ProjectId == dto.ProjectId && e.SegmentName.ToLower() == dto.SegmentName.ToLower());
 
-			// -------------------------------- employee evaluation per segment  -------------------------------- //
-			//1) working hours
-			var employeeWorkingHours = query
-				.GroupBy(g => new
+			//Segment target
+			double totalWorkingHours = _db.EmployeeWorkingHours
+				.Where(e => e.ProjectId == dto.ProjectId && e.SegmentName == dto.SegmentName)
+				.Sum(e => e.WorkingHours);
+
+			double totalClosed = _db
+				.ProjectDetails
+				.Where(e => e.ProjectId == dto.ProjectId && !e.IsDeleted && e.CallStatus.IsClosed)
+				.Count();
+			double segmentTarget = totalWorkingHours > 0 ? totalClosed / totalWorkingHours : 0;
+
+			// result
+			var result = _db.EmployeeWorkingHours
+				.Where(e => e.ProjectId == dto.ProjectId && e.SegmentName == dto.SegmentName)
+				.Select(e => new ProjectSegmentTelemarketersEvaluationsViewModel
 				{
-					userName = g.Employee.UserName
-				})
-				.Select(e => new
-				{
-					EmployeeUserName = Utilities.modifyUserName(e.Key.userName),
-					WorkingHours = e.Sum(x => x.WorkingHours)
+					EmployeeUserName = Utilities.modifyUserName(e.Employee.UserName),
+					WorkingHours = e.WorkingHours,
+					Closed = _db.ProjectDetails
+							.Where(pd => pd.ProjectId == e.ProjectId && pd.EmployeeId == e.EmployeeId && pd.CallStatus.IsClosed && !pd.IsDeleted)
+							.Count(),
+					ClosedPerHour = _db.ProjectDetails
+							.Where(pd => pd.ProjectId == e.ProjectId && pd.EmployeeId == e.EmployeeId && pd.CallStatus.IsClosed && !pd.IsDeleted)
+							.Count() / e.WorkingHours,
+					SegmentTarget = segmentTarget,
+					Achievement = _db.ProjectDetails
+							.Where(pd => pd.ProjectId == e.ProjectId && pd.EmployeeId == e.EmployeeId && pd.CallStatus.IsClosed && !pd.IsDeleted)
+							.Count() / segmentTarget,
+					Mark = _db.ProjectDictionaries
+							  .Where(pd => pd.ProjectId == dto.ProjectId &&
+										   !pd.IsDeleted &&
+											_db.ProjectDetails.Where(pd => pd.ProjectId == e.ProjectId && pd.EmployeeId == e.EmployeeId && pd.CallStatus.IsClosed && !pd.IsDeleted).Count() / segmentTarget >= pd.RangFrom &&
+											_db.ProjectDetails.Where(pd => pd.ProjectId == e.ProjectId && pd.EmployeeId == e.EmployeeId && pd.CallStatus.IsClosed && !pd.IsDeleted).Count() / segmentTarget <= pd.RangTo)
+								.FirstOrDefault().Value
+
 				})
 				.ToList();
 
-			//2) 
-
-
-			return new ResultWithMessage(null, string.Empty);
+			return new ResultWithMessage(result, string.Empty);
 		}
 	}
 }

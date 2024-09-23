@@ -1,9 +1,4 @@
-﻿using MathNet.Numerics;
-using System.Collections.Generic;
-using TelemarketingControlSystem.Helper;
-using TelemarketingControlSystem.Models;
-
-namespace TelemarketingControlSystem.Services.ProjectsEvaluation
+﻿namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 {
 	public class ProjectTypeDictionaryViewModel
 	{
@@ -83,8 +78,12 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 	public class ProjectSegmentTelemarketersEvaluationsViewModel
 	{
 		public string EmployeeUserName { get; set; }
+		public string Segment { get; set; }
 		public double WorkingHours { get; set; }
-		public int TotalClosed { get; set; }
-		public double Mark { get; set; }
+		public double Closed { get; set; }
+		public double ClosedPerHour { get; set; }
+		public double SegmentTarget { get; set; }
+		public double Achievement { get; set; }
+		public string Mark { get; set; }
 	}
 }
