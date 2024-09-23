@@ -252,11 +252,19 @@ namespace TelemarketingControlSystem.Services.ProjectsEvaluation
 				Value = totalWorkingHours > 0 ? totalClosed / totalWorkingHours : 0
 			};
 
+			//3) Project Quota
+			ProjectSegmentEvaluationCardDetails quota = new()
+			{
+				CardTitle = "Quota",
+				Value = project.Quota
+			};
+
 			//4) Result
 			List<ProjectSegmentEvaluationCardDetails> result = [];
 			result.Add(totalWorkingHoursCard);
 			result.Add(totalClosedCard);
 			result.Add(target);
+			result.Add(quota);
 	
 
 			return new ResultWithMessage(result, string.Empty);
