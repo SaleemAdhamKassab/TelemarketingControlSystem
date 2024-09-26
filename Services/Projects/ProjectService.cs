@@ -837,6 +837,11 @@ namespace TelemarketingControlSystem.Services.Projects
 					Region = updatedProjectDetail.Region,
 					SegmentName = updatedProjectDetail.SegmentName,
 					SubSegment = updatedProjectDetail.SubSegment,
+					AddedOn = updatedProjectDetail.AddedOn,
+					CreatedBy = Utilities.modifyUserName(updatedProjectDetail.CreatedBy),
+					IsDeleted = updatedProjectDetail.IsDeleted,
+					LastUpdatedBy = Utilities.modifyUserName(updatedProjectDetail.LastUpdatedBy),
+					LastUpdateDate = updatedProjectDetail.LastUpdateDate,
 				};
 
 				return new ResultWithMessage(result, string.Empty);
