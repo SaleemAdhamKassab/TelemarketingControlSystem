@@ -810,7 +810,36 @@ namespace TelemarketingControlSystem.Services.Projects
 
 				_db.Update(projectDetailToUpdate);
 				_db.SaveChanges();
-				return new ResultWithMessage(null, string.Empty);
+
+				ProjectDetail updatedProjectDetail = _db.ProjectDetails
+					.Include(e=>e.Project)
+					.Include(e => e.CallStatus)
+					.Include(e=>e.Employee)
+					.SingleOrDefault(e => e.Id == model.Id);
+
+				UpdatedProjectDetailViewModel result = new()
+				{
+					Id = updatedProjectDetail.Id,
+					City = updatedProjectDetail.City,
+					AlternativeNumber = updatedProjectDetail.AlternativeNumber,
+					Bundle = updatedProjectDetail.Bundle,
+					CallStatusId = updatedProjectDetail.CallStatusId,
+					CallStatus = updatedProjectDetail.CallStatus.Name,					
+					Contract = updatedProjectDetail.Contract,
+					EmployeeId = updatedProjectDetail.EmployeeId,
+					Employee = Utilities.modifyUserName(updatedProjectDetail.Employee.UserName),
+				     Generation  = updatedProjectDetail.Generation,
+					GSM = updatedProjectDetail.GSM,
+					LineType = updatedProjectDetail.LineType,
+					Note = updatedProjectDetail.Note,
+					ProjectId = updatedProjectDetail.ProjectId,
+					Project = updatedProjectDetail.Project.Name,
+					Region = updatedProjectDetail.Region,
+					SegmentName = updatedProjectDetail.SegmentName,
+					SubSegment = updatedProjectDetail.SubSegment,
+				};
+
+				return new ResultWithMessage(result, string.Empty);
 			}
 			catch (Exception e)
 			{
