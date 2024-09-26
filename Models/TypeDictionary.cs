@@ -8,7 +8,7 @@ namespace TelemarketingControlSystem.Models
         public int Id { get; set; }
         public double RangFrom { get; set; }
         public double RangTo { get; set; }
-        public string Value { get; set; }
+        public double Value { get; set; }
         public bool IsDeleted { get; set; }
         public string CreatedBy { get; set; }
         public DateTime AddedOn { get; set; }

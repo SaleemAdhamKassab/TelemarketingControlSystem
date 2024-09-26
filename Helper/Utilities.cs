@@ -1,6 +1,6 @@
 ﻿namespace TelemarketingControlSystem.Helper
 {
-    public abstract class Utilities
+	public abstract class Utilities
     {
         public static string modifyUserName(string userName)
         {
@@ -12,5 +12,13 @@
 
             return string.Empty;
         }
+
+        public static DateTime convertDateToArabStandardDate(DateTime dateTime)
+		{
+			var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time");
+			dateTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime, timeZone);
+
+            return dateTime;
+		}
     }
 }

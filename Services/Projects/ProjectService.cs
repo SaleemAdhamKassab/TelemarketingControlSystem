@@ -160,12 +160,10 @@ namespace TelemarketingControlSystem.Services.Projects
 			  DateFrom = e.DateFrom,
 			  DateTo = e.DateTo,
 			  Quota = e.Quota,
-			  //TypeId = e.TypeId,
 			  TypeId = e.ProjectTypeId,
-			  //Type = projectTypes.ElementAt(e.TypeId - 1),
 			  Type = e.ProjectType.Name,
 			  CreatedBy = Utilities.modifyUserName(e.CreatedBy),
-			  IsClosed = e.DateTo < DateTime.Now,
+			  IsClosed = e.DateTo.Date < DateTime.Now.Date,
 		  });
 		private IQueryable<ProjectDetailViewModel> convertProjectDetailToListViewModel(IQueryable<ProjectDetail> model)
 		{
@@ -351,36 +349,48 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return result;
 		}
-		private projectExpectedRemainingDaysViewModel getProjectExpectedRemainingDays(int projectId, DateTime projectEndDate)
+		private projectExpectedRemainingDaysViewModel getProjectExpectedRemainingDays(Project project)
 		{
-			projectExpectedRemainingDaysViewModel result = new()
-			{
-				Key = "Remaining Days",
-				RemainingDays = (projectEndDate - DateTime.Now).TotalDays
-			};
-
 			IQueryable<ProjectDetail> query = _db.ProjectDetails
-				.Include(e => e.CallStatus)
-				.Where(e => e.ProjectId == projectId && !e.IsDeleted && e.CallStatus.IsClosed);
-
-			if (query.Count() == 0)
-				return result;
+				.Where(e => e.ProjectId == project.Id &&
+							!e.Project.IsDeleted &&
+							!e.IsDeleted &&
+							e.CallStatus.IsClosed);
 
 			//1) Avg closed per day
-			double avgClosedPerDays = query.Average(e => e.Id);
+			var closedPerDay = query
+				.GroupBy(g => g.LastUpdateDate.Value.Date)
+				.Select(e => new
+				{
+					date = e.Key.Date,
+					closedCount = e.Count()
+				})
+				.ToList();
+
+			if (closedPerDay.Count == 0)
+				return new projectExpectedRemainingDaysViewModel()
+				{
+					Key = "Remaining Days",
+					RemainingDays = (project.DateTo - project.DateFrom).TotalDays + 1
+				};
+
+			double avgClosedPerDay = closedPerDay.Select(e => e.closedCount).ToList().Average();
 
 			//2) Total Closed
 			double totalClosed = query.Count();
 
 			//3) project quota
-			int quota = _db.Projects.Find(projectId).Quota;
+			int quota = _db.Projects.Find(project.Id).Quota;
 
 			//4) remainingDays
-			double remainingDays = (quota - totalClosed) / avgClosedPerDays;
+			double remainingDays = (quota - totalClosed) / avgClosedPerDay;
 
 			//5) return result
-			result.RemainingDays = remainingDays;
-			return result;
+			return new projectExpectedRemainingDaysViewModel()
+			{
+				Key = "Remaining Days",
+				RemainingDays = remainingDays
+			};
 		}
 
 
@@ -402,7 +412,6 @@ namespace TelemarketingControlSystem.Services.Projects
 
 			return result.OrderBy(e => e.Name).ToList();
 		}
-		//public ResultWithMessage getProjectTypes() => new(convertListToListViewModel(projectTypes), string.Empty);
 		public ResultWithMessage getProjectTypes()
 		{
 			var projectTypes = _db
@@ -680,8 +689,10 @@ namespace TelemarketingControlSystem.Services.Projects
 				if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
 				{
 					projectToUpdate.Name = model.Name;
-					projectToUpdate.DateFrom = model.DateFrom;
-					projectToUpdate.DateTo = model.DateTo;
+					//projectToUpdate.DateFrom = model.DateFrom;
+					projectToUpdate.DateFrom = Utilities.convertDateToArabStandardDate(model.DateFrom);
+					//projectToUpdate.DateTo = model.DateTo;
+					projectToUpdate.DateTo = Utilities.convertDateToArabStandardDate(model.DateTo);
 					projectToUpdate.Quota = model.Quota;
 					//projectToUpdate.TypeId = model.TypeId;
 					projectToUpdate.ProjectTypeId = model.TypeId;
@@ -896,8 +907,7 @@ namespace TelemarketingControlSystem.Services.Projects
 			if (project is null)
 				return new ResultWithMessage(null, $"Invalid Project Id: {projectId}");
 
-			return new ResultWithMessage(getProjectExpectedRemainingDays(projectId, project.DateTo), string.Empty);
+			return new ResultWithMessage(getProjectExpectedRemainingDays(project), string.Empty);
 		}
-
 	}
 }
