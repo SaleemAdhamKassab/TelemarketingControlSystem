@@ -2,8 +2,7 @@
     using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
 using TelemarketingControlSystem.Services.Auth;
-using TelemarketingControlSystem.Services.Projects;
-using TelemarketingControlSystem.Services.ProjectsEvaluation;
+using TelemarketingControlSystem.Services.ProjectService;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 
 namespace TelemarketingControlSystem.Controllers

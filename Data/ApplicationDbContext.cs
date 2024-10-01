@@ -19,6 +19,8 @@ namespace TelemarketingControlSystem.Models.Data
 		public DbSet<TypeDictionary> TypeDictionaries { get; set; }
 		public DbSet<ProjectDictionary> ProjectDictionaries { get; set; }
 		public DbSet<EmployeeWorkingHour> EmployeeWorkingHours { get; set; }
+		public DbSet<TypeMistakeDictionary> TypeMistakeDictionaries { get; set; }
+		public DbSet<ProjectMistakeDictionary> ProjectMistakeDictionaries { get; set; }
 
 		//Auth Models
 		public DbSet<AccessLog> AccessLogs { get; set; }

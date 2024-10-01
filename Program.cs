@@ -1,16 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using TelemarketingControlSystem.Models.Data;
 using TelemarketingControlSystem.Services.Auth;
-using TelemarketingControlSystem.Services.Projects;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Server.IISIntegration;
 using Microsoft.OpenApi.Models;
 using TelemarketingControlSystem.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using TelemarketingControlSystem.Services.NotificationHub;
-using TelemarketingControlSystem.Services.ProjectStatistics;
-using TelemarketingControlSystem.Services.Segments;
-using TelemarketingControlSystem.Services.ProjectsEvaluation;
+using TelemarketingControlSystem.Services.ProjectService;
+using TelemarketingControlSystem.Services.ProjectStatisticService;
+using TelemarketingControlSystem.Services.SegmentService;
+using TelemarketingControlSystem.Services.ProjectEvaluationService;
+using TelemarketingControlSystem.Services.MistakeReportService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
@@ -27,9 +28,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 
 //services
 builder.Services.AddScoped<IProjectService, ProjectService>();
-builder.Services.AddScoped<IProjectStatisticsService, ProjectStatisticsService>();
-builder.Services.AddScoped<ISegmentsService, SegmentsService>();
+builder.Services.AddScoped<IProjectStatisticsService, ProjectStatisticService>();
+builder.Services.AddScoped<ISegmentsService, SegmentService>();
 builder.Services.AddScoped<IProjectsEvaluationService, ProjectsEvaluationService>();
+builder.Services.AddScoped<IMistakeReportService, MistakeReportService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IWindowsAuthService, WindowsAuthService>();
 builder.Services.AddScoped<IHubService, HubService>();
@@ -39,31 +41,31 @@ builder.Services.AddScoped<IHubService, HubService>();
 builder.Services.AddSwaggerGen(setup =>
 {
 
-    // Include 'SecurityScheme' to use JWT Authentication
-    var jwtSecurityScheme = new OpenApiSecurityScheme
-    {
-        BearerFormat = "JWT",
-        Name = "JWT Authentication",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = JwtBearerDefaults.AuthenticationScheme,
-        Description = "Put **_ONLY_** your JWT Bearer token on textbox below!",
+	// Include 'SecurityScheme' to use JWT Authentication
+	var jwtSecurityScheme = new OpenApiSecurityScheme
+	{
+		BearerFormat = "JWT",
+		Name = "JWT Authentication",
+		In = ParameterLocation.Header,
+		Type = SecuritySchemeType.Http,
+		Scheme = JwtBearerDefaults.AuthenticationScheme,
+		Description = "Put **_ONLY_** your JWT Bearer token on textbox below!",
 
-        Reference = new OpenApiReference
-        {
-            Id = JwtBearerDefaults.AuthenticationScheme,
-            Type = ReferenceType.SecurityScheme
-        }
-    };
+		Reference = new OpenApiReference
+		{
+			Id = JwtBearerDefaults.AuthenticationScheme,
+			Type = ReferenceType.SecurityScheme
+		}
+	};
 
-    setup.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
+	setup.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
 
-    setup.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        { jwtSecurityScheme, Array.Empty<string>() }
-    });
+	setup.AddSecurityRequirement(new OpenApiSecurityRequirement
+	{
+		{ jwtSecurityScheme, Array.Empty<string>() }
+	});
 
-    setup.OperationFilter<SwaggerTenantParam>();
+	setup.OperationFilter<SwaggerTenantParam>();
 
 });
 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme).AddNegotiate();
@@ -72,10 +74,10 @@ builder.Services.AddTransient<ClaimsPrincipal>(s => s.GetService<IHttpContextAcc
 //////
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", builder =>
 {
-    builder.AllowAnyMethod()
-            .AllowAnyHeader()
-            .SetIsOriginAllowed(origin => true) // allow any origin you can change here to allow localhost:4200
-            .AllowCredentials();
+	builder.AllowAnyMethod()
+			.AllowAnyHeader()
+			.SetIsOriginAllowed(origin => true) // allow any origin you can change here to allow localhost:4200
+			.AllowCredentials();
 }));
 
 var app = builder.Build();

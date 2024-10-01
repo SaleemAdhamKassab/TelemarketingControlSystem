@@ -1,4 +1,4 @@
-﻿namespace TelemarketingControlSystem.Services.ProjectsEvaluation
+﻿namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 {
 	public class ProjectTypeDictionaryViewModel
 	{

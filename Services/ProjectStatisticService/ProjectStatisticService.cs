@@ -2,17 +2,17 @@
 using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
-using static TelemarketingControlSystem.Services.ProjectStatistics.ProjectStatisticsViewModels;
 using System.Linq.Expressions;
+using static TelemarketingControlSystem.Services.ProjectStatisticService.ProjectStatisticsViewModels;
 
-namespace TelemarketingControlSystem.Services.ProjectStatistics
+namespace TelemarketingControlSystem.Services.ProjectStatisticService
 {
 	public interface IProjectStatisticsService
 	{
 		ResultWithMessage generalReport(GeneralReportDto generalReportDto);
 		ResultWithMessage hourlyTarget(HourlyTargetDto hourlyTargetDto);
 	}
-	public class ProjectStatisticsService(ApplicationDbContext db) : IProjectStatisticsService
+	public class ProjectStatisticService(ApplicationDbContext db) : IProjectStatisticsService
 	{
 		private readonly ApplicationDbContext _db = db;
 

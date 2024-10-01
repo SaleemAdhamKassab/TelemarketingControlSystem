@@ -1,4 +1,4 @@
-﻿namespace TelemarketingControlSystem.Services.ProjectStatistics
+﻿namespace TelemarketingControlSystem.Services.ProjectStatisticService
 {
     public class ProjectStatisticsViewModels
     {

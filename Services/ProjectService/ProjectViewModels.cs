@@ -1,9 +1,7 @@
 ﻿using TelemarketingControlSystem.Helper;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using TelemarketingControlSystem.Models;
 
-namespace TelemarketingControlSystem.Services.Projects
+namespace TelemarketingControlSystem.Services.ProjectService
 {
 	public class EmployeeViewModel
 	{

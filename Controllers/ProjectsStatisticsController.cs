@@ -1,14 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
 using TelemarketingControlSystem.Services.Auth;
-using TelemarketingControlSystem.Services.ProjectStatistics;
+using TelemarketingControlSystem.Services.ProjectStatisticService;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
-using static TelemarketingControlSystem.Services.ProjectStatistics.ProjectStatisticsViewModels;
+using static TelemarketingControlSystem.Services.ProjectStatisticService.ProjectStatisticsViewModels;
 
 namespace TelemarketingControlSystem.Controllers
 {
 
-    public class ProjectsStatisticsController : BaseController
+	public class ProjectsStatisticsController : BaseController
     {
         private readonly IProjectStatisticsService _projectStatisticsService;
         private readonly IJwtService _jwtService;

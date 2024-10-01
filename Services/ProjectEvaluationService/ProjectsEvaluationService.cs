@@ -1,11 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using System.DirectoryServices.Protocols;
 using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 
-namespace TelemarketingControlSystem.Services.ProjectsEvaluation
+namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 {
 	public interface IProjectsEvaluationService
 	{

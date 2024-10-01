@@ -1,4 +1,4 @@
-﻿namespace TelemarketingControlSystem.Services.Segments
+﻿namespace TelemarketingControlSystem.Services.SegmentService
 {
     public class SegmentDto
     {

@@ -12,7 +12,7 @@ using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 
-namespace TelemarketingControlSystem.Services.Projects
+namespace TelemarketingControlSystem.Services.ProjectService
 {
 	public interface IProjectService
 	{
@@ -600,7 +600,8 @@ namespace TelemarketingControlSystem.Services.Projects
 					AddedOn = DateTime.Now,
 					ProjectTypeId = model.TypeId,
 					ProjectDetails = [],
-					ProjectDictionaries = []
+					ProjectDictionaries = [],
+					ProjectMistakeDictionaries = []
 				};
 
 
@@ -658,12 +659,29 @@ namespace TelemarketingControlSystem.Services.Projects
 
 				project.ProjectDictionaries.AddRange(projectDefaultDictionary);
 
-				//3) save project
+				//3) create project default mistake dictionary
+				List<ProjectMistakeDictionary> projectDefaultMistakeDictionary = _db.TypeMistakeDictionaries
+					.Where(e => e.ProjectTypeId == model.TypeId && !e.IsDeleted)
+					.Select(e => new ProjectMistakeDictionary
+					{
+						RangFrom = e.RangFrom,
+						RangTo = e.RangTo,
+						Value = e.Value,
+						IsDeleted = false,
+						CreatedBy = authData.userName,
+						AddedOn = DateTime.Now
+					})
+					.ToList();
+
+				project.ProjectMistakeDictionaries.AddRange(projectDefaultMistakeDictionary);
+
+				//4) save project
 				_db.Projects.Add(project);
 				_db.SaveChanges();
 
-				//---------------------Send Notification--------------------------
+				//------------------------------- Send Notification -------------------------------//
 				pushNotification(project.Id, model.Name, employeeIDs, model.Name + " created By : " + authData.userName.Substring(authData.userName.IndexOf("\\") + 1), "Create New Project", authData.userName);
+
 
 				return new ResultWithMessage(null, string.Empty);
 			}
@@ -812,9 +830,9 @@ namespace TelemarketingControlSystem.Services.Projects
 				_db.SaveChanges();
 
 				ProjectDetail updatedProjectDetail = _db.ProjectDetails
-					.Include(e=>e.Project)
+					.Include(e => e.Project)
 					.Include(e => e.CallStatus)
-					.Include(e=>e.Employee)
+					.Include(e => e.Employee)
 					.SingleOrDefault(e => e.Id == model.Id);
 
 				UpdatedProjectDetailViewModel result = new()
@@ -824,11 +842,11 @@ namespace TelemarketingControlSystem.Services.Projects
 					AlternativeNumber = updatedProjectDetail.AlternativeNumber,
 					Bundle = updatedProjectDetail.Bundle,
 					CallStatusId = updatedProjectDetail.CallStatusId,
-					CallStatus = updatedProjectDetail.CallStatus.Name,					
+					CallStatus = updatedProjectDetail.CallStatus.Name,
 					Contract = updatedProjectDetail.Contract,
 					EmployeeId = updatedProjectDetail.EmployeeId,
 					Employee = Utilities.modifyUserName(updatedProjectDetail.Employee.UserName),
-				     Generation  = updatedProjectDetail.Generation,
+					Generation = updatedProjectDetail.Generation,
 					GSM = updatedProjectDetail.GSM,
 					LineType = updatedProjectDetail.LineType,
 					Note = updatedProjectDetail.Note,

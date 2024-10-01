@@ -3,7 +3,7 @@ using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using TelemarketingControlSystem.Models;
 
-namespace TelemarketingControlSystem.Services.Segments
+namespace TelemarketingControlSystem.Services.SegmentService
 {
 	public interface ISegmentsService
 	{
@@ -11,7 +11,7 @@ namespace TelemarketingControlSystem.Services.Segments
 		ResultWithMessage addSegment(SegmentDto segmentDto, TenantDto authData);
 		ResultWithMessage projectSegments(int projectId);
 	}
-	public class SegmentsService(ApplicationDbContext db) : ISegmentsService
+	public class SegmentService(ApplicationDbContext db) : ISegmentsService
 	{
 		private readonly ApplicationDbContext _db = db;
 
