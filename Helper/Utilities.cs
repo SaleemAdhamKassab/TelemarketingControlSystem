@@ -1,6 +1,8 @@
-﻿namespace TelemarketingControlSystem.Helper
+﻿using TelemarketingControlSystem.Services.ProjectEvaluationService;
+
+namespace TelemarketingControlSystem.Helper
 {
-	public abstract class Utilities
+	public static class Utilities
     {
         public static string modifyUserName(string userName)
         {
@@ -20,5 +22,23 @@
 
             return dateTime;
 		}
-    }
+
+		public static bool isValidDictionaryRanges(List<DictionaryRange> dictionaryRanges)
+		{
+			List<double> ranges = [];
+
+			foreach (DictionaryRange range in dictionaryRanges)
+			{
+				ranges.Add(range.RangFrom);
+				ranges.Add(range.RangTo);
+			}
+
+			List<double> sortedRanges = ranges.OrderBy(e => e).ToList();
+
+			if (ranges.SequenceEqual(sortedRanges))
+				return true;
+
+			return false;
+		}
+	}
 }

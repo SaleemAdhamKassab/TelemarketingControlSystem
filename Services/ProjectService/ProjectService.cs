@@ -186,7 +186,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				Note = e.Note,
 				EmployeeUserName = Utilities.modifyUserName(e.Employee.UserName),
 				EmployeeID = e.EmployeeId,
-				LastUpdateDate = e.LastUpdateDate
+				LastUpdateDate = e.LastUpdatedDate
 			});
 		}
 		private async Task<string> validateCreateProjectViewModel(CreateProjectViewModel model)
@@ -359,7 +359,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 
 			//1) Avg closed per day
 			var closedPerDay = query
-				.GroupBy(g => g.LastUpdateDate.Value.Date)
+				.GroupBy(g => g.LastUpdatedDate.Value.Date)
 				.Select(e => new
 				{
 					date = e.Key.Date,
@@ -635,7 +635,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 						Note = gsmExcel.Note,
 						AddedOn = DateTime.Now,
 						CreatedBy = authData.userName,
-						LastUpdateDate = DateTime.Now,
+						LastUpdatedDate = DateTime.Now,
 						LastUpdatedBy = authData.userName,
 						EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex)),
 					};
@@ -644,7 +644,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				};
 
 				//2) create project default dictionary
-				List<ProjectDictionary> projectDefaultDictionary = _db.TypeDictionaries
+				List<ProjectDictionary> projectDefaultDictionary = _db.ProjectTypeDictionaries
 					.Where(e => e.ProjectTypeId == model.TypeId && !e.IsDeleted)
 					.Select(e => new ProjectDictionary
 					{
@@ -660,7 +660,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				project.ProjectDictionaries.AddRange(projectDefaultDictionary);
 
 				//3) create project default mistake dictionary
-				List<ProjectMistakeDictionary> projectDefaultMistakeDictionary = _db.TypeMistakeDictionaries
+				List<ProjectMistakeDictionary> projectDefaultMistakeDictionary = _db.ProjectTypeMistakeDictionaries
 					.Where(e => e.ProjectTypeId == model.TypeId && !e.IsDeleted)
 					.Select(e => new ProjectMistakeDictionary
 					{
@@ -715,7 +715,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 					//projectToUpdate.TypeId = model.TypeId;
 					projectToUpdate.ProjectTypeId = model.TypeId;
 					projectToUpdate.LastUpdatedBy = authData.userName;
-					projectToUpdate.LastUpdateDate = DateTime.Now;
+					projectToUpdate.LastUpdatedDate = DateTime.Now;
 				}
 
 				_db.Update(projectToUpdate);
@@ -743,13 +743,13 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			{
 				project.IsDeleted = true;
 				project.LastUpdatedBy = authData.userName;
-				project.LastUpdateDate = DateTime.Now;
+				project.LastUpdatedDate = DateTime.Now;
 
 				foreach (ProjectDetail projectDetail in project.ProjectDetails)
 				{
 					projectDetail.IsDeleted = true;
 					projectDetail.LastUpdatedBy = authData.userName;
-					projectDetail.LastUpdateDate = DateTime.Now;
+					projectDetail.LastUpdatedDate = DateTime.Now;
 				}
 
 				_db.Update(project);
@@ -794,7 +794,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 							empIndex++;
 
 						projectDetail.EmployeeId = int.Parse(employeeIDs.ElementAt(empIndex));
-						projectDetail.LastUpdateDate = DateTime.Now;
+						projectDetail.LastUpdatedDate = DateTime.Now;
 						projectDetail.LastUpdatedBy = authData.userName;
 					}
 				}
@@ -823,7 +823,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				projectDetailToUpdate.EmployeeId = model.EmployeeID;
 				projectDetailToUpdate.Note = model.Note;
 				projectDetailToUpdate.LastUpdatedBy = authData.userName;
-				projectDetailToUpdate.LastUpdateDate = DateTime.Now;
+				projectDetailToUpdate.LastUpdatedDate = DateTime.Now;
 
 
 				_db.Update(projectDetailToUpdate);
@@ -859,7 +859,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 					CreatedBy = Utilities.modifyUserName(updatedProjectDetail.CreatedBy),
 					IsDeleted = updatedProjectDetail.IsDeleted,
 					LastUpdatedBy = Utilities.modifyUserName(updatedProjectDetail.LastUpdatedBy),
-					LastUpdateDate = updatedProjectDetail.LastUpdateDate,
+					LastUpdateDate = updatedProjectDetail.LastUpdatedDate,
 				};
 
 				return new ResultWithMessage(result, string.Empty);
@@ -903,7 +903,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				Note = e.Note,
 				Segment = e.SegmentName,
 				SubSegment = e.SubSegment,
-				LastUpdatedDate = e.LastUpdateDate.Value.ToString("dd/MM/yyyy HH:mm:ss")
+				LastUpdatedDate = e.LastUpdatedDate.Value.ToString("dd/MM/yyyy HH:mm:ss")
 			})];
 
 			string projectName = query.FirstOrDefault().Project.Name;
@@ -928,7 +928,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				   CreatedBy = Utilities.modifyUserName(e.CreatedBy),
 				   AddedOn = e.AddedOn.ToString("dd/MM/yyyy HH:mm:ss"),
 				   LastUpdatedBy = Utilities.modifyUserName(e.LastUpdatedBy),
-				   LastUpdateDate = e.LastUpdateDate.Value.ToString("dd/MM/yyyy HH:mm:ss"),
+				   LastUpdateDate = e.LastUpdatedDate.Value.ToString("dd/MM/yyyy HH:mm:ss"),
 			   }).ToList();
 
 			if (data.Count == 0)

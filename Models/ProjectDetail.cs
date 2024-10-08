@@ -5,8 +5,6 @@ namespace TelemarketingControlSystem.Models
 {
     public class ProjectDetail : BaseModel
     {
-        [Key]
-        public int Id { get; set; }
         [Required]
         public string GSM { get; set; }
         public string? Region { get; set; }

@@ -80,4 +80,24 @@
 		public double Achievement { get; set; }
 		public double? Mark { get; set; }
 	}
+	public class ProjectMistakeDictionaryViewModel
+	{
+		public int Id { get; set; }
+		public double RangFrom { get; set; }
+		public double RangTo { get; set; }
+		public double Value { get; set; }
+		public bool IsDeleted { get; set; }
+		public string CreatedBy { get; set; }
+		public DateTime AddedOn { get; set; }
+		public string? LastUpdatedBy { get; set; }
+		public DateTime? LastUpdatedDate { get; set; }
+
+		public int ProjectId { get; set; }
+		public string Project { get; set; }
+	}
+	public class UpdateProjectMistakeDictionaryDto
+	{
+		public int projectId { get; set; }
+		public List<DictionaryRange> DictionaryRanges { get; set; }
+	}
 }

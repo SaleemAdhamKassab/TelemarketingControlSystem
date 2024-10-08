@@ -23,8 +23,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 
 			IQueryable<ProjectDetail> query = _db.ProjectDetails
 				.Where(e => e.ProjectId == generalReportDto.ProjectId &&
-				e.LastUpdateDate.Value.Date >= Utilities.convertDateToArabStandardDate(generalReportDto.DateFrom).Date &&
-				e.LastUpdateDate.Value.Date <= Utilities.convertDateToArabStandardDate(generalReportDto.DateTo).Date &&
+				e.LastUpdatedDate.Value.Date >= Utilities.convertDateToArabStandardDate(generalReportDto.DateFrom).Date &&
+				e.LastUpdatedDate.Value.Date <= Utilities.convertDateToArabStandardDate(generalReportDto.DateTo).Date &&
 				!e.IsDeleted);
 
 			var predicates = new List<Expression<Func<ProjectDetail, bool>>>();
@@ -80,7 +80,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 
 			//exclude calls that (more than the minimum call duration + 2 minutes)
 			double minDuration = query.Select(e => e.DurationInSeconds).Min();
-			query = query.Where(e => e.DurationInSeconds <= minDuration + 120);
+			query = query.Where(e => e.DurationInSeconds 
+			<= minDuration + 120);
 
 			return query;
 		}
@@ -173,7 +174,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 
 			//4) Closed Per Days -> Quota Progress
 
-			List<ClosedPerDay> closedPerDays = query.Where(e => e.CallStatus.IsClosed).GroupBy(g => g.LastUpdateDate.Value.Date)
+			List<ClosedPerDay> closedPerDays = query.Where(e => e.CallStatus.IsClosed).GroupBy(g => g.LastUpdatedDate.Value.Date)
 				.Select(e => new ClosedPerDay()
 				{
 					Date = e.Key.Date,
@@ -203,9 +204,9 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 				{
 					Status = e.Key,
 					TotalMinutes = e.Sum(x => x.DurationInSeconds) /60.0,
-					HourPercentage = totalMinutes / e.Sum(x => x.DurationInSeconds) / 60.0,
-					Rate = (totalMinutes / e.Sum(x => x.DurationInSeconds) / 60.0) * 60.0,
-					Target = closedCallsAvg != 0 ? ((totalMinutes / e.Sum(x => x.DurationInSeconds) / 60.0) * 60.0) / closedCallsAvg : 0
+					HourPercentage =  (e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes,
+					Rate = ((e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes) * 60.0,
+					Target = closedCallsAvg != 0 ? (((e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes) * 60.0) / closedCallsAvg : 0
 				})
 				.ToList();
 

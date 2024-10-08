@@ -2,10 +2,8 @@
 
 namespace TelemarketingControlSystem.Models
 {
-	public class CallStatus
+	public class CallStatus:BaseModel
 	{
-		[Key]
-		public int Id { get; set; }
 		public string Name { get; set; }
 		public bool IsClosed { get; set; }
 

@@ -19,17 +19,17 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 	public class ProjectsEvaluationService(ApplicationDbContext db) : IProjectsEvaluationService
 	{
 		private readonly ApplicationDbContext _db = db;
-		private void disableOldDictionary(List<TypeDictionary> typeDictionariesToDelete, string userName)
+		private void disableOldDictionary(List<ProjectTypeDictionary> projectTypeDictionariesToDelete, string userName)
 		{
-			foreach (TypeDictionary typeDictionary in typeDictionariesToDelete)
+			foreach (ProjectTypeDictionary projectTypeDictionary in projectTypeDictionariesToDelete)
 			{
-				typeDictionary.IsDeleted = true;
-				typeDictionary.LastUpdatedBy = userName;
-				typeDictionary.LastUpdatedDate = DateTime.Now;
+				projectTypeDictionary.IsDeleted = true;
+				projectTypeDictionary.LastUpdatedBy = userName;
+				projectTypeDictionary.LastUpdatedDate = DateTime.Now;
 			}
-			_db.UpdateRange(typeDictionariesToDelete);
+			_db.UpdateRange(projectTypeDictionariesToDelete);
 		}
-		private void disableProjectOldDictionary(List<ProjectDictionary> projectDictionaries, string userName)
+		private void disableOldProjectDictionary(List<ProjectDictionary> projectDictionaries, string userName)
 		{
 			foreach (ProjectDictionary projectDictionary in projectDictionaries)
 			{
@@ -39,12 +39,13 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 			}
 			_db.UpdateRange(projectDictionaries);
 		}
-		private List<TypeDictionary> getTypeDictionaryRanges(int projecttypeId, List<DictionaryRange> dictionaryRanges, string userName)
+		private List<ProjectTypeDictionary> getTypeDictionaryRanges(int projecttypeId, List<DictionaryRange> dictionaryRanges, string userName)
 		{
-			List<TypeDictionary> typeDictionaries = [];
+			List<ProjectTypeDictionary> projectTypeDictionaries = [];
+
 			foreach (DictionaryRange dictionaryRange in dictionaryRanges)
 			{
-				TypeDictionary typeDictionary = new()
+				ProjectTypeDictionary projectTypeDictionary = new()
 				{
 					RangFrom = dictionaryRange.RangFrom,
 					RangTo = dictionaryRange.RangTo,
@@ -55,10 +56,10 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 					ProjectTypeId = projecttypeId
 				};
 
-				typeDictionaries.Add(typeDictionary);
+				projectTypeDictionaries.Add(projectTypeDictionary);
 			}
 
-			return typeDictionaries;
+			return projectTypeDictionaries;
 		}
 		private List<ProjectDictionary> getProjectDictionaryRanges(int projectId, List<DictionaryRange> dictionaryRanges, string userName)
 		{
@@ -81,25 +82,6 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 
 			return projectDictionaries;
 		}
-
-		private bool isValidRanges(List<DictionaryRange> dictionaryRanges)
-		{
-			List<double> ranges = [];
-
-			foreach (DictionaryRange range in dictionaryRanges)
-			{
-				ranges.Add(range.RangFrom);
-				ranges.Add(range.RangTo);
-			}
-
-			List<double> sortedRanges = ranges.OrderBy(e => e).ToList();
-
-			if (ranges.SequenceEqual(sortedRanges))
-				return true;
-
-			return false;
-		}
-
 		private double getProjectSegmentTotalWorkingHours(int projectId, string segmentName)
 		{
 			List<EmployeeWorkingHour> employeeWorkingHours = _db.EmployeeWorkingHours
@@ -158,7 +140,7 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 				return new ResultWithMessage(null, $"Invalid project type Id: {projectTypeId}");
 
 			List<ProjectTypeDictionaryViewModel> result = _db
-				.TypeDictionaries
+				.ProjectTypeDictionaries
 				.Where(e => e.ProjectTypeId == projectTypeId && !e.IsDeleted)
 				.Include(e => e.ProjectType)
 				.Select(e => new ProjectTypeDictionaryViewModel
@@ -187,21 +169,21 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 			if (projectType is null)
 				return new ResultWithMessage(null, $"Invalid project type Id: {updateProjectTypeDictionaryDto.ProjectTypeId}");
 
-			List<TypeDictionary> typeDictionariesToDelete = _db.TypeDictionaries.Where(e => e.ProjectTypeId == updateProjectTypeDictionaryDto.ProjectTypeId).ToList();
+			List<ProjectTypeDictionary> projectTypeDictionariesToDelete = _db.ProjectTypeDictionaries.Where(e => e.ProjectTypeId == updateProjectTypeDictionaryDto.ProjectTypeId).ToList();
 
-			if (typeDictionariesToDelete.Count == 0)
+			if (projectTypeDictionariesToDelete.Count == 0)
 				return new ResultWithMessage(null, $"No dictionary found to delete with Id : {updateProjectTypeDictionaryDto.ProjectTypeId}");
 
 			//1) Validate range sequence
-			if (!isValidRanges(updateProjectTypeDictionaryDto.DictionaryRanges))
+			if (!Utilities.isValidDictionaryRanges(updateProjectTypeDictionaryDto.DictionaryRanges))
 				return new ResultWithMessage(null, "Invalid ranges");
 
 			//2) Disable old dictionary
-			disableOldDictionary(typeDictionariesToDelete, authData.userName);
+			disableOldDictionary(projectTypeDictionariesToDelete, authData.userName);
 
 			//3) Add new dictionary
-			List<TypeDictionary> typeDictionaryRanges = getTypeDictionaryRanges(updateProjectTypeDictionaryDto.ProjectTypeId, updateProjectTypeDictionaryDto.DictionaryRanges, authData.userName);
-			_db.TypeDictionaries.AddRange(typeDictionaryRanges);
+			List<ProjectTypeDictionary> typeDictionaryRanges = getTypeDictionaryRanges(updateProjectTypeDictionaryDto.ProjectTypeId, updateProjectTypeDictionaryDto.DictionaryRanges, authData.userName);
+			_db.ProjectTypeDictionaries.AddRange(typeDictionaryRanges);
 
 			_db.SaveChanges();
 
@@ -245,12 +227,12 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 				return new ResultWithMessage(null, $"Invalid project Id: {updateProjectDictionaryDto.projectId}");
 
 			//1) Validate range sequence
-			if (!isValidRanges(updateProjectDictionaryDto.DictionaryRanges))
+			if (!Utilities.isValidDictionaryRanges(updateProjectDictionaryDto.DictionaryRanges))
 				return new ResultWithMessage(null, "Invalid ranges");
 
 			//2) disable Project old dictionary
 			List<ProjectDictionary> projectDictionariesToDelete = _db.ProjectDictionaries.Where(e => e.ProjectId == updateProjectDictionaryDto.projectId).ToList();
-			disableProjectOldDictionary(projectDictionariesToDelete, authData.userName);
+			disableOldProjectDictionary(projectDictionariesToDelete, authData.userName);
 
 			//3) Add new dictionary
 			List<ProjectDictionary> ProjectDictionaries = getProjectDictionaryRanges(updateProjectDictionaryDto.projectId, updateProjectDictionaryDto.DictionaryRanges, authData.userName);
@@ -362,11 +344,11 @@ namespace TelemarketingControlSystem.Services.ProjectEvaluationService
 					Mark = _db.ProjectDictionaries
 							  .Where(pdic => pdic.ProjectId == dto.ProjectId &&
 										   !pdic.IsDeleted &&
-											((e.Sum(w => w.WorkingHours) > 0 ? _db.ProjectDetails.Include(e => e.CallStatus).Where(pd => pd.ProjectId == dto.ProjectId && pd.Employee.UserName == e.Key && pd.SegmentName == dto.SegmentName && pd.CallStatus.IsClosed).Count() / e.Sum(w => w.WorkingHours) : 0) / projecSegmentTarget) >= pdic.RangFrom &&
-											((e.Sum(w => w.WorkingHours) > 0 ? _db.ProjectDetails.Include(e => e.CallStatus).Where(pd => pd.ProjectId == dto.ProjectId && pd.Employee.UserName == e.Key && pd.SegmentName == dto.SegmentName && pd.CallStatus.IsClosed).Count() / e.Sum(w => w.WorkingHours) : 0) / projecSegmentTarget) <= pdic.RangTo)
+											Math.Round(((e.Sum(w => w.WorkingHours) > 0 ? _db.ProjectDetails.Include(e => e.CallStatus).Where(pd => pd.ProjectId == dto.ProjectId && pd.Employee.UserName == e.Key && pd.SegmentName == dto.SegmentName && pd.CallStatus.IsClosed).Count() / e.Sum(w => w.WorkingHours) : 0) / projecSegmentTarget) * 100) / 100 >= pdic.RangFrom &&
+											Math.Round(((e.Sum(w => w.WorkingHours) > 0 ? _db.ProjectDetails.Include(e => e.CallStatus).Where(pd => pd.ProjectId == dto.ProjectId && pd.Employee.UserName == e.Key && pd.SegmentName == dto.SegmentName && pd.CallStatus.IsClosed).Count() / e.Sum(w => w.WorkingHours) : 0) / projecSegmentTarget) * 100) / 100 <= pdic.RangTo)
 							  .FirstOrDefault().Value
-				})
-				.ToList();
+
+				});
 
 			return new ResultWithMessage(result, string.Empty);
 		}
