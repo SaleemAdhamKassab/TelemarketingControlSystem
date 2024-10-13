@@ -66,7 +66,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 		}
 		private IQueryable<ProjectDetailCall> getProjectDetailCallsData(HourlyTargetDto hourlyTargetDto)
 		{
-			if (hourlyTargetDto == null || hourlyTargetDto.ProjectId == 0)
+			if (hourlyTargetDto is null || hourlyTargetDto.ProjectId == 0)
 				return Enumerable.Empty<ProjectDetailCall>().AsQueryable();
 
 			hourlyTargetDto.TargetDate = Utilities.convertDateToArabStandardDate(hourlyTargetDto.TargetDate);
@@ -77,12 +77,6 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 										   e.CallStartDate >= hourlyTargetDto.TargetDate &&
 										   e.CallStartDate <= hourlyTargetDto.TargetDate.AddHours(1) &&
 										   !e.ProjectDetail.IsDeleted);
-
-			//exclude calls that (more than the minimum call duration + 2 minutes)
-			double minDuration = query.Select(e => e.DurationInSeconds).Min();
-			query = query.Where(e => e.DurationInSeconds 
-			<= minDuration + 120);
-
 			return query;
 		}
 
@@ -194,17 +188,30 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 			double totalMinutes = query.Select(e => e.DurationInSeconds).Sum() / 60.0;
 
 			double closedCallsAvg = 0;
-			var closedCallsAvgResult = query.Where(e => e.ProjectDetail.CallStatus.IsClosed).Select(e => e.DurationInSeconds / 60.0);
-			if (closedCallsAvgResult.Any())
-				closedCallsAvg = closedCallsAvgResult.Average();
+			var closedCallsAvgQuery = query
+				.Where(e => e.ProjectDetail.CallStatus.IsClosed)
+				.GroupBy(e => new
+				{
+					gsm = e.ProjectDetail.GSM,
+					empName = e.ProjectDetail.Employee.Name,
+					callStatus = e.ProjectDetail.CallStatus.Name
+				})
+				.Select(e => new
+				{
+					totalMin = e.Sum(x => x.DurationInSeconds) / 60.0
+				});
+
+			if (closedCallsAvgQuery.Any())
+				closedCallsAvg = closedCallsAvgQuery.Average(e => e.totalMin);
+
 
 			var hourlyStatusTargets = query
 				.GroupBy(g => g.ProjectDetail.CallStatus.Name)
 				.Select(e => new HourlyStatusTarget
 				{
 					Status = e.Key,
-					TotalMinutes = e.Sum(x => x.DurationInSeconds) /60.0,
-					HourPercentage =  (e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes,
+					TotalMinutes = e.Sum(x => x.DurationInSeconds) / 60.0,
+					HourPercentage = (e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes,
 					Rate = ((e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes) * 60.0,
 					Target = closedCallsAvg != 0 ? (((e.Sum(x => x.DurationInSeconds) / 60.0) / totalMinutes) * 60.0) / closedCallsAvg : 0
 				})
@@ -212,7 +219,8 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 
 			HourlyTargetViewModel result = new()
 			{
-				ClosedCallsAvg = closedCallsAvg,
+				TotalMinutes = totalMinutes,
+				ClosedCallsDurationAvg = closedCallsAvg,
 				HourlyStatusTargets = hourlyStatusTargets
 			};
 

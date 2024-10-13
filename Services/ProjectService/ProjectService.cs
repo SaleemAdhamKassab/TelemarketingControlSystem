@@ -26,7 +26,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		Task<ResultWithMessage> update(UpdateProjectViewModel model, TenantDto authData);
 		Task<ResultWithMessage> delete(int id, TenantDto authData);
 		Task<ResultWithMessage> reDistributeProjectGSMs(int projectId, string EmployeeIds, TenantDto tenantDto);
-		Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
+		ResultWithMessage updateProjectDetail(ProjectDetailViewModel model, TenantDto tenantDto);
 		ByteResultWithMessage exportProjectDetailsToExcel(int projectId, TenantDto tenantDto);
 		ByteResultWithMessage exportProjectsToExcel();
 		ResultWithMessage getAdmins();
@@ -810,64 +810,56 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				return new ResultWithMessage(null, e.Message);
 			}
 		}
-		public async Task<ResultWithMessage> updateProjectDetail(ProjectDetailViewModel model, TenantDto authData)
+		public ResultWithMessage updateProjectDetail(ProjectDetailViewModel model, TenantDto authData)
 		{
-			ProjectDetail projectDetailToUpdate = await _db.ProjectDetails.FindAsync(model.Id);
+			ProjectDetail projectDetailToUpdate = _db.ProjectDetails.AsNoTracking().SingleOrDefault(e => e.Id == model.Id);
 
 			if (projectDetailToUpdate is null)
 				return new ResultWithMessage(null, $"Empty Project Detail");
 
-			try
+			projectDetailToUpdate.CallStatusId = model.CallStatusId;
+			projectDetailToUpdate.EmployeeId = model.EmployeeID;
+			projectDetailToUpdate.Note = model.Note;
+			projectDetailToUpdate.LastUpdatedBy = authData.userName;
+			projectDetailToUpdate.LastUpdatedDate = DateTime.Now;
+
+			_db.ProjectDetails.Update(projectDetailToUpdate);
+			_db.SaveChanges();
+
+			ProjectDetail updatedProjectDetail = _db.ProjectDetails
+				.Include(e => e.Project)
+				.Include(e => e.CallStatus)
+				.Include(e => e.Employee)
+				.SingleOrDefault(e => e.Id == model.Id);
+
+			UpdatedProjectDetailViewModel result = new()
 			{
-				projectDetailToUpdate.CallStatusId = model.CallStatusId;
-				projectDetailToUpdate.EmployeeId = model.EmployeeID;
-				projectDetailToUpdate.Note = model.Note;
-				projectDetailToUpdate.LastUpdatedBy = authData.userName;
-				projectDetailToUpdate.LastUpdatedDate = DateTime.Now;
+				Id = updatedProjectDetail.Id,
+				City = updatedProjectDetail.City,
+				AlternativeNumber = updatedProjectDetail.AlternativeNumber,
+				Bundle = updatedProjectDetail.Bundle,
+				CallStatusId = updatedProjectDetail.CallStatusId,
+				CallStatus = updatedProjectDetail.CallStatus.Name,
+				Contract = updatedProjectDetail.Contract,
+				EmployeeId = updatedProjectDetail.EmployeeId,
+				Employee = Utilities.modifyUserName(updatedProjectDetail.Employee.UserName),
+				Generation = updatedProjectDetail.Generation,
+				GSM = updatedProjectDetail.GSM,
+				LineType = updatedProjectDetail.LineType,
+				Note = updatedProjectDetail.Note,
+				ProjectId = updatedProjectDetail.ProjectId,
+				Project = updatedProjectDetail.Project.Name,
+				Region = updatedProjectDetail.Region,
+				SegmentName = updatedProjectDetail.SegmentName,
+				SubSegment = updatedProjectDetail.SubSegment,
+				AddedOn = updatedProjectDetail.AddedOn,
+				CreatedBy = Utilities.modifyUserName(updatedProjectDetail.CreatedBy),
+				IsDeleted = updatedProjectDetail.IsDeleted,
+				LastUpdatedBy = Utilities.modifyUserName(updatedProjectDetail.LastUpdatedBy),
+				LastUpdateDate = updatedProjectDetail.LastUpdatedDate,
+			};
 
-
-				_db.Update(projectDetailToUpdate);
-				_db.SaveChanges();
-
-				ProjectDetail updatedProjectDetail = _db.ProjectDetails
-					.Include(e => e.Project)
-					.Include(e => e.CallStatus)
-					.Include(e => e.Employee)
-					.SingleOrDefault(e => e.Id == model.Id);
-
-				UpdatedProjectDetailViewModel result = new()
-				{
-					Id = updatedProjectDetail.Id,
-					City = updatedProjectDetail.City,
-					AlternativeNumber = updatedProjectDetail.AlternativeNumber,
-					Bundle = updatedProjectDetail.Bundle,
-					CallStatusId = updatedProjectDetail.CallStatusId,
-					CallStatus = updatedProjectDetail.CallStatus.Name,
-					Contract = updatedProjectDetail.Contract,
-					EmployeeId = updatedProjectDetail.EmployeeId,
-					Employee = Utilities.modifyUserName(updatedProjectDetail.Employee.UserName),
-					Generation = updatedProjectDetail.Generation,
-					GSM = updatedProjectDetail.GSM,
-					LineType = updatedProjectDetail.LineType,
-					Note = updatedProjectDetail.Note,
-					ProjectId = updatedProjectDetail.ProjectId,
-					Project = updatedProjectDetail.Project.Name,
-					Region = updatedProjectDetail.Region,
-					SegmentName = updatedProjectDetail.SegmentName,
-					SubSegment = updatedProjectDetail.SubSegment,
-					AddedOn = updatedProjectDetail.AddedOn,
-					CreatedBy = Utilities.modifyUserName(updatedProjectDetail.CreatedBy),
-					IsDeleted = updatedProjectDetail.IsDeleted,
-					LastUpdatedBy = Utilities.modifyUserName(updatedProjectDetail.LastUpdatedBy),
-					LastUpdateDate = updatedProjectDetail.LastUpdatedDate,
-				};
-
-				return new ResultWithMessage(result, string.Empty);
-			}
-			catch (Exception e)
-			{
-				return new ResultWithMessage(null, e.Message);
-			}
+			return new ResultWithMessage(result, string.Empty);
 		}
 		public ByteResultWithMessage exportProjectDetailsToExcel(int projectId, TenantDto authData)
 		{

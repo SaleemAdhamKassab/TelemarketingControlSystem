@@ -76,7 +76,7 @@ namespace TelemarketingControlSystem.Controllers
 
         [HttpPut("updateProjectDetail")]
         [TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
-        public async Task<IActionResult> updateProjectDetail(ProjectDetailViewModel model) => _returnResultWithMessage(await _projectService.updateProjectDetail(model, authData()));
+        public  IActionResult updateProjectDetail(ProjectDetailViewModel model) => _returnResultWithMessage( _projectService.updateProjectDetail(model, authData()));
 
         [HttpGet("exportProjectDetailsToExcel")]
         public IActionResult exportProjectDetailsToExcel(int projectId)
