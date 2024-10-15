@@ -180,4 +180,9 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		public DateTime? LastUpdateDate { get; set; }
 		public bool IsDeleted { get; set; }
 	}
+
+	public class Mistake
+	{
+
+	}
 }

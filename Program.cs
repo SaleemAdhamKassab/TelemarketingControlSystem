@@ -12,6 +12,7 @@ using TelemarketingControlSystem.Services.ProjectStatisticService;
 using TelemarketingControlSystem.Services.SegmentService;
 using TelemarketingControlSystem.Services.ProjectEvaluationService;
 using TelemarketingControlSystem.Services.MistakeReportService;
+using TelemarketingControlSystem.Services.ExcelService;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
@@ -32,6 +33,7 @@ builder.Services.AddScoped<IProjectStatisticsService, ProjectStatisticService>()
 builder.Services.AddScoped<ISegmentsService, SegmentService>();
 builder.Services.AddScoped<IProjectsEvaluationService, ProjectsEvaluationService>();
 builder.Services.AddScoped<IMistakeReportService, MistakeReportService>();
+builder.Services.AddScoped<IExcelService, ExcelService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IWindowsAuthService, WindowsAuthService>();
 builder.Services.AddScoped<IHubService, HubService>();
@@ -65,7 +67,7 @@ builder.Services.AddSwaggerGen(setup =>
 		{ jwtSecurityScheme, Array.Empty<string>() }
 	});
 
-	setup.OperationFilter<SwaggerTenantParam>();
+	//setup.OperationFilter<SwaggerTenantParam>();
 
 });
 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme).AddNegotiate();

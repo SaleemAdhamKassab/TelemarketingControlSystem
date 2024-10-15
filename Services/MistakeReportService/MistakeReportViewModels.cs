@@ -37,4 +37,20 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		public int ProjectTypeId { get; set; }
 		public string ProjectType { get; set; }
 	}
+	public class UploadMistakeReportRequest
+	{
+		public int ProjectId { get; set; }
+		public IFormFile MistakeReport { get; set; }
+	}
+	public class ExcelMistakeReport
+	{
+		public string SurveyName { get; set; }
+		public string TelemarketerName { get; set; }
+		public string MistakeType { get; set; }
+		public string GSM { get; set; }
+		public string Serial { get; set; }
+		public string QuestionNumber { get; set; }
+		public string Segment { get; set; }
+		public string Controller { get; set; }
+	}
 }

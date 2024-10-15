@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.ActionFilters;
 using TelemarketingControlSystem.Services.Auth;
 using TelemarketingControlSystem.Services.MistakeReportService;
@@ -49,5 +48,18 @@ namespace TelemarketingControlSystem.Controllers
 		[HttpPut("updateProjectMistakeDictionary")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
 		public IActionResult updateProjectMistakeDictionary(UpdateProjectMistakeDictionaryDto dto) => _returnResultWithMessage(_mistakeReportService.updateProjectMistakeDictionary(dto, authData()));
+
+
+		[HttpPost("UploadMistakeReport")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> UploadMistakeReport(UploadMistakeReportRequest dto)
+		{
+			var result = await _mistakeReportService.UploadMistakeReportAsync(dto, authData());
+
+			if (!string.IsNullOrEmpty(result.Message))
+				return BadRequest(new { message = result.Message });
+
+			return Ok(result.Data);
+		}
 	}
 }

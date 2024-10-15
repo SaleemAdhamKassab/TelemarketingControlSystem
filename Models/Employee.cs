@@ -13,5 +13,6 @@ namespace TelemarketingControlSystem.Models
 		public List<ProjectDetail> ProjectDetails { get; set; }
 		public List<EmployeeCall> EmployeeCalls { get; set; }
 		public List<EmployeeWorkingHour> EmployeeWorkingHours { get; set; }
+		public List<MistakeReport> MistakeReports { get; set; }
 	}
 }

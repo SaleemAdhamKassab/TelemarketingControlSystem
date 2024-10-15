@@ -21,6 +21,7 @@ namespace TelemarketingControlSystem.Models
 		public List<ProjectDictionary> ProjectDictionaries { get; set; }
 		public List<ProjectMistakeDictionary> ProjectMistakeDictionaries { get; set; }
 		public List<EmployeeWorkingHour> EmployeeWorkingHours { get; set; }
+		public List<MistakeReport> MistakeReports { get; set; }
 		public virtual ICollection<Notification.Notification> Notifications { get; set; }
 	}
 }

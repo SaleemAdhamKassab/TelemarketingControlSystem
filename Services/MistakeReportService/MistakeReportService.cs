@@ -4,6 +4,11 @@ using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using TelemarketingControlSystem.Services.ProjectEvaluationService;
+using TelemarketingControlSystem.Services.ExcelService;
+using TelemarketingControlSystem.Services.ProjectService;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Reflection.Metadata.Ecma335;
 
 namespace TelemarketingControlSystem.Services.MistakeReportService
 {
@@ -14,14 +19,13 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		ResultWithMessage projectMistakeDictionary(int projectId);
 		ResultWithMessage updateProjectMistakeDictionary(UpdateProjectMistakeDictionaryDto dto, TenantDto authData);
 		ResultWithMessage getProjectMistakeDictionary(int projectId);
+		Task<ResultWithMessage> UploadMistakeReportAsync(UploadMistakeReportRequest request, TenantDto authData);
 	}
-	public class MistakeReportService : IMistakeReportService
+
+	public class MistakeReportService(ApplicationDbContext db, IExcelService excelService) : IMistakeReportService
 	{
-		private readonly ApplicationDbContext _db;
-		public MistakeReportService(ApplicationDbContext db)
-		{
-			_db = db;
-		}
+		private readonly ApplicationDbContext _db = db;
+		private readonly IExcelService _excelService = excelService;
 
 		private void disableOldProjectTypeMistakeDictionary(List<ProjectTypeMistakeDictionary> projectTypeMistakeDictionaries, string userName)
 		{
@@ -91,10 +95,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		}
 
 
-
-
-
-
 		public ResultWithMessage projectTypeMistakeDictionary(int projectTypeId)
 		{
 			ProjectType projectType = _db.ProjectTypes.Find(projectTypeId);
@@ -126,7 +126,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			return new ResultWithMessage(result, string.Empty);
 
 		}
-
 		public ResultWithMessage getProjectTypeMistakeDictionary(int projectTypeId)
 		{
 			ProjectType projectType = _db.ProjectTypes.Find(projectTypeId);
@@ -187,7 +186,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 			return getProjectTypeMistakeDictionary(dto.ProjectTypeId);
 		}
-
 		public ResultWithMessage projectMistakeDictionary(int projectId)
 		{
 			Project project = _db.Projects.Find(projectId);
@@ -218,7 +216,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 			return new ResultWithMessage(result, string.Empty);
 		}
-
 		public ResultWithMessage updateProjectMistakeDictionary(UpdateProjectMistakeDictionaryDto dto, TenantDto authData)
 		{
 			Project project = _db.Projects.Find(dto.projectId);
@@ -242,12 +239,11 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 			return getProjectMistakeDictionary(dto.projectId);
 		}
-
 		public ResultWithMessage getProjectMistakeDictionary(int projectId)
 		{
 			Project project = _db.Projects.Find(projectId);
 
-			if (project == null)
+			if (project is null)
 				return new ResultWithMessage(null, $"Invalid project Id: {projectId}");
 
 			List<ProjectMistakeDictionaryViewModel> result = _db
@@ -272,6 +268,72 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 				.ToList();
 
 			return new ResultWithMessage(result, string.Empty);
+		}
+		public async Task<ResultWithMessage> UploadMistakeReportAsync(UploadMistakeReportRequest request, TenantDto authData)
+		{
+			Project project = await _db.Projects.FindAsync(request.ProjectId);
+			if (project is null)
+				return new ResultWithMessage(null, $"Invalid project id: {request.ProjectId}");
+
+			//------------------------------------ Sheet1: Mistakes Validations ------------------------------------//
+			string filePath = _excelService.SaveFile(request.MistakeReport, "MistakeReports");
+			List<ExcelMistakeReport> mistakeReportList = _excelService.Import<ExcelMistakeReport>(filePath, 0);
+
+			//1) Survey Name
+			var nullSurveyName = mistakeReportList.Select((z, i) => new { z.SurveyName, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.SurveyName));
+			if (nullSurveyName is not null)
+				return new ResultWithMessage(null, $"Empty Survey Name at row number: [{nullSurveyName.i + 2}]");
+
+
+			//2) Telemarketers
+			var nullTelemarketer = mistakeReportList.Select((z, i) => new { z.TelemarketerName, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.TelemarketerName));
+			if (nullTelemarketer is not null)
+				return new ResultWithMessage(null, $"Empty Telemarketer at row number: [{nullTelemarketer.i + 2}]");
+
+			var invalidTelemarketrName = mistakeReportList
+					.Select((z, i) => new { z.TelemarketerName, i })
+					.FirstOrDefault(e => !_db.Employees.Any(s => s.UserName.Trim().ToLower() == "Syriatel\\" + e.TelemarketerName.Trim().ToLower()));
+
+			//3) Mistake Types
+			var nullMistakeType = mistakeReportList.Select((z, i) => new { z.MistakeType, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.MistakeType));
+			if (nullMistakeType is not null)
+				return new ResultWithMessage(null, $"Empty Mistake Type");
+
+			var invalidMistakeType = mistakeReportList
+					.Select((z, i) => new { z.MistakeType, i })
+					.FirstOrDefault(e => !_db.MistakeTypes.Any(s => s.Name.Trim().ToLower() == e.MistakeType.Trim().ToLower()));
+
+			if (invalidMistakeType is not null)
+				return new ResultWithMessage(null, $"Invalid Telemarketer Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
+
+			//------------------------------- Create Mistake Report -------------------------------//
+
+			List<MistakeReport> mistakeReportData = [];
+
+			foreach (ExcelMistakeReport row in mistakeReportList)
+			{
+				MistakeReport mistakeReport = new()
+				{
+					GSM = row.GSM,
+					Controller = row.Controller,
+					QuestionNumber = row.QuestionNumber,
+					Segment = row.Segment,
+					Serial = row.Serial,
+					IsDeleted = false,
+					AddedOn = DateTime.Now,
+					ProjectId = project.Id,
+					EmployeeId = _db.Employees.FirstOrDefault(e => e.UserName.Trim().ToLower() == ("Syriatel\\" + row.TelemarketerName).Trim().ToLower()).Id,
+					MistakeTypeName = _db.MistakeTypes.FirstOrDefault(e => e.Name.Trim().ToLower() == row.MistakeType.Trim().ToLower()).Name,
+					CreatedBy = authData.userName,
+				};
+
+				mistakeReportData.Add(mistakeReport);
+			};
+
+			_db.MistakeReports.AddRange(mistakeReportData);
+			_db.SaveChanges();
+
+			return new ResultWithMessage(null, string.Empty);
 		}
 	}
 }

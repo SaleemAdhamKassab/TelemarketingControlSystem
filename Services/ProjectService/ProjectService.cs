@@ -11,6 +11,7 @@ using TelemarketingControlSystem.Services.NotificationHub.ViewModel;
 using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using TelemarketingControlSystem.Services.ExcelService;
 
 namespace TelemarketingControlSystem.Services.ProjectService
 {
@@ -33,12 +34,17 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		ResultWithMessage projectExpectedRemainingDays(int projectId);
 	}
 
-	public class ProjectService(ApplicationDbContext db, IWebHostEnvironment webHostEnvironment, IHubContext<NotifiyHub, INotificationService> notification, IConfiguration config) : IProjectService
+	public class ProjectService(ApplicationDbContext db,
+
+		IHubContext<NotifiyHub, INotificationService> notification,
+		IConfiguration config,
+		IExcelService excelService) : IProjectService
 	{
 		private readonly ApplicationDbContext _db = db;
-		private readonly IWebHostEnvironment _webHostEnvironment = webHostEnvironment;
 		private readonly IHubContext<NotifiyHub, INotificationService> _notification = notification;
 		private readonly IConfiguration _config = config;
+		private readonly IExcelService _excelService = excelService;
+
 		private IQueryable<Project> getProjectData(ProjectFilterModel filter, TenantDto authData)
 		{
 			IQueryable<Project> query;
@@ -149,7 +155,6 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				}
 			}
 
-
 			return query;
 		}
 		private IQueryable<ProjectViewModel> convertProjectsToListViewModel(IQueryable<Project> model) =>
@@ -230,26 +235,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 
 			return string.Empty;
 		}
-		private string saveFile(IFormFile file)
-		{
-			var extension = Path.GetExtension(file.FileName);
 
-			var webRootPath = _webHostEnvironment.WebRootPath;
-			if (string.IsNullOrWhiteSpace(webRootPath))
-				webRootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-
-			var folderPath = Path.Combine(webRootPath, enExcelUploadFolderName.ExcelUploads.ToString());
-			if (!Directory.Exists(folderPath))
-				Directory.CreateDirectory(folderPath);
-
-			//var fileName = $"{Guid.NewGuid()}.{extension}";
-			var fileName = $"{file.Name}_{Guid.NewGuid()}{extension}";
-			var filePath = Path.Combine(folderPath, fileName);
-			using var stream = new FileStream(filePath, FileMode.Create);
-			file.CopyTo(stream);
-
-			return filePath;
-		}
 		private async Task pushNotification(int? projectId, string projectName, List<string> userIds, string msg, string title, string createdBy)
 		{
 			List<string> userNames = _db.Employees.Where(x => userIds.Contains(x.Id.ToString())).Select(x => x.UserName).ToList();
@@ -525,8 +511,10 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				if (!string.IsNullOrEmpty(validateCreateProjectModelErrorMessage))
 					return new ResultWithMessage(null, validateCreateProjectModelErrorMessage);
 
-				string filePath = saveFile(model.GSMsFile);
-				List<GSMExcel> gsmExcelList = ExcelHelper.Import<GSMExcel>(filePath);
+				//string filePath = saveFile(model.GSMsFile);
+				string filePath = _excelService.SaveFile(model.GSMsFile, "ExcelUploads");
+				//List<GSMExcel> gsmExcelList = ExcelHelper.Import<GSMExcel>(filePath);
+				List<GSMExcel> gsmExcelList = _excelService.Import<GSMExcel>(filePath,0);
 
 				string validateGsmExcelErrorMessage = validateGSMsExcelFile(model.GSMsFile, gsmExcelList, model.Quota);
 				if (!string.IsNullOrEmpty(validateGsmExcelErrorMessage))
@@ -899,8 +887,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			})];
 
 			string projectName = query.FirstOrDefault().Project.Name;
-			var exportService = new ExportService();
-			byte[] excelData = exportService.ExportToExcel(projectDetailsDataToExcels, $"{projectName}'s Details");
+			byte[] excelData = _excelService.Export(projectDetailsDataToExcels, $"{projectName}'s Details");
 
 			return new ByteResultWithMessage(excelData, string.Empty);
 		}
@@ -926,8 +913,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			if (data.Count == 0)
 				return new ByteResultWithMessage(null, $"No data found");
 
-			var exportService = new ExportService();
-			byte[] excelData = exportService.ExportToExcel(data, "Projects");
+			byte[] excelData = _excelService.Export(data, "Projects");
 
 			return new ByteResultWithMessage(excelData, string.Empty);
 		}

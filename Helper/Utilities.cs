@@ -1,26 +1,28 @@
-﻿using TelemarketingControlSystem.Services.ProjectEvaluationService;
+﻿using Microsoft.AspNetCore.Hosting;
+using TelemarketingControlSystem.Services.ProjectEvaluationService;
+using static TelemarketingControlSystem.Helper.ConstantValues;
 
 namespace TelemarketingControlSystem.Helper
 {
 	public static class Utilities
-    {
-        public static string modifyUserName(string userName)
-        {
-            if (!string.IsNullOrEmpty(userName))
-            {
-                userName = userName.Substring(userName.IndexOf('\\') + 1);
-                return char.ToUpper(userName[0]) + userName.Substring(1).ToLower();
-            }
+	{
+		public static string modifyUserName(string userName)
+		{
+			if (!string.IsNullOrEmpty(userName))
+			{
+				userName = userName.Substring(userName.IndexOf('\\') + 1);
+				return char.ToUpper(userName[0]) + userName.Substring(1).ToLower();
+			}
 
-            return string.Empty;
-        }
+			return string.Empty;
+		}
 
-        public static DateTime convertDateToArabStandardDate(DateTime dateTime)
+		public static DateTime convertDateToArabStandardDate(DateTime dateTime)
 		{
 			var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Arab Standard Time");
 			dateTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime, timeZone);
 
-            return dateTime;
+			return dateTime;
 		}
 
 		public static bool isValidDictionaryRanges(List<DictionaryRange> dictionaryRanges)
