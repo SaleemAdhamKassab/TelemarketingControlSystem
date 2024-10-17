@@ -61,5 +61,29 @@ namespace TelemarketingControlSystem.Controllers
 
 			return Ok(result.Data);
 		}
+
+		[HttpPost("MistakeReport")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> MistakeReport(MistakeReportRequest request)
+		{
+			var result = await _mistakeReportService.GetMistakeReportAsync(request);
+
+			if (!string.IsNullOrEmpty(result.Message))
+				return BadRequest(new { message = result.Message });
+
+			return Ok(result.Data);
+		}
+
+		[HttpGet("MistakeTypes")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> MistakeTypes()
+		{
+			var result = await _mistakeReportService.GetMistakeTypesAsync();
+
+			if (!string.IsNullOrEmpty(result.Message))
+				return BadRequest(new { message = result.Message });
+
+			return Ok(result.Data);
+		}
 	}
 }

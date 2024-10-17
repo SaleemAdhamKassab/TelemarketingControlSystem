@@ -501,7 +501,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			var resultData = queryViewModel.Skip(filter.PageIndex * filter.PageSize).Take(filter.PageSize).ToList();
 
 			//5- return 
-			return new ResultWithMessage(new DataWithSize(resultSize, resultData), "");
+			return new ResultWithMessage(new DataWithSize(resultSize, resultData), string.Empty);
 		}
 		public async Task<ResultWithMessage> create(CreateProjectViewModel model, TenantDto authData)
 		{
@@ -514,7 +514,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				//string filePath = saveFile(model.GSMsFile);
 				string filePath = _excelService.SaveFile(model.GSMsFile, "ExcelUploads");
 				//List<GSMExcel> gsmExcelList = ExcelHelper.Import<GSMExcel>(filePath);
-				List<GSMExcel> gsmExcelList = _excelService.Import<GSMExcel>(filePath,0);
+				List<GSMExcel> gsmExcelList = _excelService.Import<GSMExcel>(filePath, 0);
 
 				string validateGsmExcelErrorMessage = validateGSMsExcelFile(model.GSMsFile, gsmExcelList, model.Quota);
 				if (!string.IsNullOrEmpty(validateGsmExcelErrorMessage))
