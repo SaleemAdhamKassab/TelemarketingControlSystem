@@ -20,6 +20,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		Task<ResultWithMessage> GetMistakeTypesAsync();
 		Task<ResultWithMessage> GetMistakeReportTelemarketersAsync(int projectId);
 		Task<ResultWithMessage> GetMistakeTypesAsync(int projectId);
+		Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request);
 	}
 
 	public class MistakeReportService(ApplicationDbContext db, IExcelService excelService) : IMistakeReportService
@@ -115,6 +116,19 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			return query;
 		}
 
+		private IQueryable<ProjectDetail> getTeamMistakeReportQuery(TeamMistakeReportRequest request)
+		{
+			IQueryable<ProjectDetail> query = _db.ProjectDetails.Where(e => !e.IsDeleted && !e.Project.IsDeleted);
+
+			if (request.ProjectsIds != null && request.ProjectsIds.Count() != 0)
+				query = query.Where(e => request.ProjectsIds.Contains(e.ProjectId));
+
+			if (request.TelemarketersIds != null && request.TelemarketersIds.Count() != 0)
+				query = query.Where(e => request.TelemarketersIds.Contains(e.EmployeeId));
+
+			return query;
+		}
+
 		private IQueryable<MistakeReportResponse> convertToMistakeReportResponse(IQueryable<MistakeReport> query, int projectId)
 		{
 			return query.Select(e => new MistakeReportResponse()
@@ -130,8 +144,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 				MistakeDescription = e.MistakeType.Description,
 				MistakeWeight = e.MistakeType.Weight,
 			});
-
-
 		}
 
 		private async Task<List<LookUpResponse>> getMistakeReportTelemarketersAsync(int projectId)
@@ -165,8 +177,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 			return mistakeTypes;
 		}
-
-
 
 
 
@@ -367,13 +377,13 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			//1) Survey Name
 			var nullSurveyName = mistakeReportList.Select((z, i) => new { z.SurveyName, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.SurveyName));
 			if (nullSurveyName is not null)
-				return new ResultWithMessage(null, $"Empty Survey Name at row number: [{nullSurveyName.i + 2}]");
+				return new ResultWithMessage(null, $"Mistakes Sheet1: Empty Survey Name at row number: [{nullSurveyName.i + 2}]");
 
 
 			//2) Telemarketers
 			var nullTelemarketer = mistakeReportList.Select((z, i) => new { z.TelemarketerName, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.TelemarketerName));
 			if (nullTelemarketer is not null)
-				return new ResultWithMessage(null, $"Empty Telemarketer at row number: [{nullTelemarketer.i + 2}]");
+				return new ResultWithMessage(null, $"Mistakes Sheet1: Empty Telemarketer at row number: [{nullTelemarketer.i + 2}]");
 
 			var invalidTelemarketrName = mistakeReportList
 					.Select((z, i) => new { z.TelemarketerName, i })
@@ -382,16 +392,16 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			//3) Mistake Types
 			var nullMistakeType = mistakeReportList.Select((z, i) => new { z.MistakeType, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.MistakeType));
 			if (nullMistakeType is not null)
-				return new ResultWithMessage(null, $"Empty Mistake Type");
+				return new ResultWithMessage(null, $"Mistakes Sheet1: Empty Mistake Type");
 
 			var invalidMistakeType = mistakeReportList
 					.Select((z, i) => new { z.MistakeType, i })
 					.FirstOrDefault(e => !_db.MistakeTypes.Any(s => s.Name.Trim().ToLower() == e.MistakeType.Trim().ToLower()));
 
 			if (invalidMistakeType is not null)
-				return new ResultWithMessage(null, $"Invalid Telemarketer Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
+				return new ResultWithMessage(null, $"Mistakes Sheet1: Invalid Telemarketer Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
 
-			//------------------------------- Create Mistake Report -------------------------------//
+			//------------------------------- Create Sheet1 : Mistake Report -------------------------------//
 
 			List<MistakeReport> mistakeReportData = [];
 
@@ -491,6 +501,46 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			var mistakeTypes = await getMistakeTypesAsync(projectId);
 
 			return new ResultWithMessage(mistakeTypes, string.Empty);
+		}
+
+		public async Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request)
+		{
+			bool isAllProjectIdsValid = request.ProjectsIds.All(projId => _db.Projects.Where(e => !e.IsDeleted).Select(e => e.Id).Contains(projId));
+			if (!isAllProjectIdsValid)
+				return new ResultWithMessage(null, $"Invalid Project Ids");
+
+			bool isAllTelemarketersIdsValid = request.TelemarketersIds.All(teleId => _db.Employees.Where(e => !e.IsDeleted).Select(e => e.Id).Contains(teleId));
+			if (!isAllTelemarketersIdsValid)
+				return new ResultWithMessage(null, $"Invalid Telemarketr Ids");
+
+
+			//1) Apply Filters
+			IQueryable<ProjectDetail> query = getTeamMistakeReportQuery(request);
+
+			IQueryable<TeamMistakeReportResponse> result =
+				query.GroupBy(g =>
+				new
+				{
+					g.ProjectId,
+					g.Project.Name,
+					g.EmployeeId,
+					g.Employee.UserName,
+				})
+				.Select(e => new TeamMistakeReportResponse()
+				{
+					projectName = e.Key.Name,
+					Telemarketer = Utilities.modifyUserName(e.Key.UserName),
+					CompletedQuestionnaire = _db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count(),
+					MistakesCount = _db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count(),
+					MistakesPercentage =(decimal) (_db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count()) / (decimal) (_db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count())
+				});
+
+			//2) pagination
+			int resultSize = result.Count();
+			IQueryable<TeamMistakeReportResponse> resultData = result.Skip(request.Filter.PageIndex * request.Filter.PageSize).Take(request.Filter.PageSize);
+
+			//return result
+			return new ResultWithMessage(new DataWithSize(resultSize, resultData), string.Empty);
 		}
 	}
 }

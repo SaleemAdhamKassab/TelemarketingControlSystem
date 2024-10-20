@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using TelemarketingControlSystem.Helper;
+﻿using TelemarketingControlSystem.Helper;
 using TelemarketingControlSystem.Models;
 using TelemarketingControlSystem.Models.Data;
 using System.Linq.Expressions;
@@ -217,6 +216,28 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 				})
 				.ToList();
 
+
+			// get N/A value
+			//1) Total working hours
+			int employeesCount = query.Select(e => e.ProjectDetail.EmployeeId).Distinct().Count();
+			double totalWorkingMinutes = employeesCount * 60.0;
+			//2) Has status
+			double sumHasStatusMinutes = query.Where(e => e.ProjectDetail.CallStatus.Name != null).Sum(e => e.DurationInSeconds) / 60.0;
+			//3) N/A total
+			double naTotal = totalWorkingMinutes - sumHasStatusMinutes;
+			//4) assign to result
+			HourlyStatusTarget naStatusTarget = new()
+			{
+				Status = "N/A",
+				TotalMinutes = naTotal,
+				HourPercentage = naTotal / totalMinutes,
+				Rate = (naTotal / totalMinutes) * 60.0,
+				Target = closedCallsAvg != 0 ? (naTotal / totalMinutes) * 60.0 / closedCallsAvg : 0
+			};
+
+			hourlyStatusTargets.Add(naStatusTarget);
+
+			//return Result
 			HourlyTargetViewModel result = new()
 			{
 				TotalMinutes = totalMinutes,

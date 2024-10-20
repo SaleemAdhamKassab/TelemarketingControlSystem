@@ -81,4 +81,18 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		public double Weight { get; set; }
 		public string Description { get; set; }
 	}
+	public class TeamMistakeReportRequest
+	{
+		public List<int> ProjectsIds { get; set; } = [];
+		public List<int> TelemarketersIds { get; set; } = [];
+		public GeneralFilterModel Filter { get; set; }
+	}
+	public class TeamMistakeReportResponse
+	{
+		public string projectName { get; set; } = string.Empty;
+		public string Telemarketer { get; set; } = string.Empty;
+		public int CompletedQuestionnaire { get; set; }
+		public int MistakesCount { get; set; }
+		public decimal MistakesPercentage { get; set; }
+	}
 }

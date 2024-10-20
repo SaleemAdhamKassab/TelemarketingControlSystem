@@ -109,5 +109,17 @@ namespace TelemarketingControlSystem.Controllers
 
 			return Ok(result.Data);
 		}
+
+		[HttpPost("GetTeamMistakeReport")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> GetMistakeTypes(TeamMistakeReportRequest request)
+		{
+			var result = await _mistakeReportService.GetTeamMistakeReportAsync(request);
+
+			if (!string.IsNullOrEmpty(result.Message))
+				return BadRequest(new { message = result.Message });
+
+			return Ok(result.Data);
+		}
 	}
 }
