@@ -108,12 +108,6 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		public int[]? TypeIds { get; set; }
 		public List<ColumnFilter>? ColumnFilters { get; set; }
 	}
-
-	public class ListViewModel
-	{
-		public int Id { get; set; }
-		public string Name { get; set; }
-	}
 	public class ProjectDataToExcel
 	{
 		public int Id { get; set; }
@@ -180,9 +174,9 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		public DateTime? LastUpdateDate { get; set; }
 		public bool IsDeleted { get; set; }
 	}
-
-	public class Mistake
-	{
-
-	}
+	//public class ListViewModel
+	//{
+	//	public int Id { get; set; }
+	//	public string Name { get; set; }
+	//}
 }

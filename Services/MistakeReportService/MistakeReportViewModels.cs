@@ -73,13 +73,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		public string MistakeDescription { get; set; }
 		public double MistakeWeight { get; set; }
 		public string Controller { get; set; }
-		public List<MistakeReportResponseFilter> Telemarketers { get; set; }
-		public List<MistakeReportResponseFilter> MistakeTypeName { get; set; }
-	}
-	public class MistakeReportResponseFilter
-	{
-		public int Id { get; set; }
-		public string Name { get; set; }
 	}
 
 	public class MistakeTypeResponse

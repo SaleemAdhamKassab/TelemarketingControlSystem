@@ -380,14 +380,14 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		}
 
 
-		public List<ListViewModel> convertListToListViewModel(List<string> list)
+		public List<LookUpResponse> convertListToListViewModel(List<string> list)
 		{
-			List<ListViewModel> result = [];
+			List<LookUpResponse> result = [];
 
 
 			for (int i = 2; i < list.Count; i++)
 			{
-				ListViewModel model = new()
+				LookUpResponse model = new()
 				{
 					Id = i + 1,
 					Name = list.ElementAt(i)
@@ -403,7 +403,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			var projectTypes = _db
 				.ProjectTypes
 				.Where(e => e.Name.ToLower() != "n/a")
-				.Select(e => new ListViewModel
+				.Select(e => new LookUpResponse
 				{
 					Id = e.Id,
 					Name = e.Name

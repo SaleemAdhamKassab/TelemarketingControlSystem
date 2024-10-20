@@ -5,7 +5,6 @@ using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using TelemarketingControlSystem.Services.ProjectEvaluationService;
 using TelemarketingControlSystem.Services.ExcelService;
-using System.Collections.Generic;
 
 namespace TelemarketingControlSystem.Services.MistakeReportService
 {
@@ -19,6 +18,8 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		Task<ResultWithMessage> UploadMistakeReportAsync(UploadMistakeReportRequest request, TenantDto authData);
 		Task<ResultWithMessage> GetMistakeReportAsync(MistakeReportRequest request);
 		Task<ResultWithMessage> GetMistakeTypesAsync();
+		Task<ResultWithMessage> GetMistakeReportTelemarketersAsync(int projectId);
+		Task<ResultWithMessage> GetMistakeTypesAsync(int projectId);
 	}
 
 	public class MistakeReportService(ApplicationDbContext db, IExcelService excelService) : IMistakeReportService
@@ -131,6 +132,38 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			});
 
 
+		}
+
+		private async Task<List<LookUpResponse>> getMistakeReportTelemarketersAsync(int projectId)
+		{
+			List<LookUpResponse> telemarketers = await _db.MistakeReports
+				.Where(e => e.ProjectId == projectId && !e.Project.IsDeleted)
+				.Select(e => new LookUpResponse()
+				{
+					Id = e.EmployeeId,
+					Name = e.Employee.UserName
+				})
+				.Distinct()
+				.OrderBy(e => e.Name)
+				.ToListAsync();
+
+			return telemarketers;
+		}
+
+		private async Task<List<LookUpResponse>> getMistakeTypesAsync(int projectId)
+		{
+			List<LookUpResponse> mistakeTypes = await _db.MistakeReports
+				.Where(e => e.ProjectId == projectId && !e.Project.IsDeleted)
+				.Select(e => new LookUpResponse()
+				{
+					Id = 0,
+					Name = e.MistakeType.Name
+				})
+				.Distinct()
+				.OrderBy(e => e.Name)
+				.ToListAsync();
+
+			return mistakeTypes;
 		}
 
 
@@ -385,21 +418,19 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			_db.MistakeReports.AddRange(mistakeReportData);
 			_db.SaveChanges();
 
-			MistakeReport firstRow = await _db.MistakeReports.FirstOrDefaultAsync(e => e.ProjectId == project.Id);
-
 			MistakeReportRequest initialRequest = new()
 			{
 				ProjectId = project.Id,
 				Filter = new()
 				{
 					PageIndex = 0,
-					PageSize = 10,
+					PageSize = 5,
 					SearchQuery = string.Empty,
 					SortActive = string.Empty,
 					SortDirection = string.Empty
 				},
-				TelemarketerIds = [firstRow.EmployeeId],
-				MistakeTypes = [firstRow.MistakeTypeName],
+				TelemarketerIds = getMistakeReportTelemarketersAsync(project.Id).Result.Select(e => e.Id).ToList(),
+				MistakeTypes = getMistakeTypesAsync(project.Id).Result.Select(e => e.Name).ToList(),
 			};
 
 			return await GetMistakeReportAsync(initialRequest);
@@ -438,6 +469,28 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 				.ToListAsync();
 
 			return new ResultWithMessage(result, string.Empty);
+		}
+
+		public async Task<ResultWithMessage> GetMistakeReportTelemarketersAsync(int projectId)
+		{
+			Project project = await _db.Projects.FindAsync(projectId);
+			if (project is null)
+				return new ResultWithMessage(null, $"Invalid project Id: {projectId}");
+
+			var telemarketers = await getMistakeReportTelemarketersAsync(projectId);
+
+			return new ResultWithMessage(telemarketers, string.Empty);
+		}
+
+		public async Task<ResultWithMessage> GetMistakeTypesAsync(int projectId)
+		{
+			Project project = await _db.Projects.FindAsync(projectId);
+			if (project is null)
+				return new ResultWithMessage(null, $"Invalid project Id: {projectId}");
+
+			var mistakeTypes = await getMistakeTypesAsync(projectId);
+
+			return new ResultWithMessage(mistakeTypes, string.Empty);
 		}
 	}
 }
