@@ -532,7 +532,8 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					Telemarketer = Utilities.modifyUserName(e.Key.UserName),
 					CompletedQuestionnaire = _db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count(),
 					MistakesCount = _db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count(),
-					MistakesPercentage =(decimal) (_db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count()) / (decimal) (_db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count())
+					MistakesPercentage = (decimal)(_db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count()) == 0 ? null :
+					(decimal)(_db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count()) / (decimal)(_db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count())
 				});
 
 			//2) pagination

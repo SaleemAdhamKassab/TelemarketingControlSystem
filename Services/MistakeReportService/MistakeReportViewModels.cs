@@ -93,6 +93,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		public string Telemarketer { get; set; } = string.Empty;
 		public int CompletedQuestionnaire { get; set; }
 		public int MistakesCount { get; set; }
-		public decimal MistakesPercentage { get; set; }
+		public decimal? MistakesPercentage { get; set; }
 	}
 }
