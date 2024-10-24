@@ -415,17 +415,14 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		public ResultWithMessage getCallStatuses() => new ResultWithMessage(_db.CallStatuses.ToList(), string.Empty);
 		public ResultWithMessage getEmployees()
 		{
-			List<EmployeeViewModel> employees = _db.Employees.Where(e => e.IsActive).ToList()
+			List<EmployeeViewModel> employees = _db.Employees.Where(e => e.IsActive)
 				.Select(e => new EmployeeViewModel
 				{
 					Id = e.Id,
 					UserName = Utilities.modifyUserName(e.UserName)
 				})
-				.OrderBy(e => e.UserName).ToList();
-
-			if (employees is null)
-				return new ResultWithMessage(null, $"Empty Employees");
-
+				.ToList();
+			
 			return new ResultWithMessage(employees, string.Empty);
 		}
 		public ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData)
