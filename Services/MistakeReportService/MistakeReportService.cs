@@ -399,7 +399,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					.FirstOrDefault(e => !_db.MistakeTypes.Any(s => s.Name.Trim().ToLower() == e.MistakeType.Trim().ToLower()));
 
 			if (invalidMistakeType is not null)
-				return new ResultWithMessage(null, $"Mistakes Sheet1: Invalid Telemarketer Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
+				return new ResultWithMessage(null, $"Mistakes Sheet1: Invalid Mistake Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
 
 			//------------------------------- Create Sheet1 : Mistake Report -------------------------------//
 
@@ -417,7 +417,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					IsDeleted = false,
 					AddedOn = DateTime.Now,
 					ProjectId = project.Id,
-					EmployeeId = _db.Employees.FirstOrDefault(e => e.UserName.Trim().ToLower() == ("Syriatel\\" + row.TelemarketerName).Trim().ToLower()).Id,
+					EmployeeId = _db.Employees.Where(e => e.UserName.Trim().ToLower().Contains(row.TelemarketerName.Trim().ToLower())).FirstOrDefault().Id,
 					MistakeTypeName = _db.MistakeTypes.FirstOrDefault(e => e.Name.Trim().ToLower() == row.MistakeType.Trim().ToLower()).Name,
 					CreatedBy = authData.userName,
 				};
