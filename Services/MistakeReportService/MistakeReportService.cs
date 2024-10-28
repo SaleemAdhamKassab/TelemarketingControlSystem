@@ -126,6 +126,9 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			if (request.TelemarketersIds != null && request.TelemarketersIds.Count() != 0)
 				query = query.Where(e => request.TelemarketersIds.Contains(e.EmployeeId));
 
+			if (!string.IsNullOrEmpty(request.Filter.SearchQuery))
+				query = query.Where(e => e.Project.Name.Trim().ToLower().Contains(request.Filter.SearchQuery.Trim().ToLower()));
+
 			return query;
 		}
 
@@ -366,9 +369,9 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 		public async Task<ResultWithMessage> UploadMistakeReportAsync(UploadMistakeReportRequest request, TenantDto authData)
 		{
-			Project project = await _db.Projects.FindAsync(request.ProjectId);
-			if (project is null)
-				return new ResultWithMessage(null, $"Invalid project id: {request.ProjectId}");
+			//Project project = await _db.Projects.FindAsync(request.ProjectId);
+			//if (project is null)
+			//	return new ResultWithMessage(null, $"Invalid project id: {request.ProjectId}");
 
 			//------------------------------------ Sheet1: Mistakes Validations ------------------------------------//
 			string filePath = _excelService.SaveFile(request.MistakeReport, "MistakeReports");
@@ -416,7 +419,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					Serial = row.Serial,
 					IsDeleted = false,
 					AddedOn = DateTime.Now,
-					ProjectId = project.Id,
+					ProjectId = _db.Projects.Where(e => e.Name.Trim().ToLower() == row.SurveyName.Trim().ToLower()).FirstOrDefault().Id,
 					EmployeeId = _db.Employees.Where(e => e.UserName.Trim().ToLower().Contains(row.TelemarketerName.Trim().ToLower())).FirstOrDefault().Id,
 					MistakeTypeName = _db.MistakeTypes.FirstOrDefault(e => e.Name.Trim().ToLower() == row.MistakeType.Trim().ToLower()).Name,
 					CreatedBy = authData.userName,
@@ -428,9 +431,10 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			_db.MistakeReports.AddRange(mistakeReportData);
 			_db.SaveChanges();
 
-			MistakeReportRequest initialRequest = new()
+			int initProjectId = mistakeReportData.Select(e => e.Id).FirstOrDefault();
+			var initialRequest = new MistakeReportRequest
 			{
-				ProjectId = project.Id,
+				ProjectId = initProjectId,
 				Filter = new()
 				{
 					PageIndex = 0,
@@ -439,8 +443,8 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					SortActive = string.Empty,
 					SortDirection = string.Empty
 				},
-				TelemarketerIds = getMistakeReportTelemarketersAsync(project.Id).Result.Select(e => e.Id).ToList(),
-				MistakeTypes = getMistakeTypesAsync(project.Id).Result.Select(e => e.Name).ToList(),
+				TelemarketerIds = getMistakeReportTelemarketersAsync(initProjectId).Result.Select(e => e.Id).ToList(),
+				MistakeTypes = getMistakeTypesAsync(initProjectId).Result.Select(e => e.Name).ToList(),
 			};
 
 			return await GetMistakeReportAsync(initialRequest);

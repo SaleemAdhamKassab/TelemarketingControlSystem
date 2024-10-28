@@ -40,7 +40,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 	}
 	public class UploadMistakeReportRequest
 	{
-		public int ProjectId { get; set; }
+		//public int ProjectId { get; set; }
 		public IFormFile MistakeReport { get; set; }
 	}
 	public class ExcelMistakeReport
