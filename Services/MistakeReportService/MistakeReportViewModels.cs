@@ -40,7 +40,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 	}
 	public class UploadMistakeReportRequest
 	{
-		//public int ProjectId { get; set; }
 		public IFormFile MistakeReport { get; set; }
 	}
 	public class ExcelMistakeReport
@@ -56,10 +55,10 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 	}
 	public class MistakeReportRequest
 	{
-		public int ProjectId { get; set; }
-		public GeneralFilterModel Filter { get; set; }
+		public List<int> ProjectIds { get; set; }
 		public List<int> TelemarketerIds { get; set; }
 		public List<string> MistakeTypes { get; set; }
+		public GeneralFilterModel Filter { get; set; }
 	}
 	public class MistakeReportResponse
 	{

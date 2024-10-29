@@ -86,29 +86,6 @@ namespace TelemarketingControlSystem.Controllers
 			return Ok(result.Data);
 		}
 
-		[HttpGet("GetMistakeReportTelemarketers/{projectId}")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-		public async Task<IActionResult> GetMistakeReportTelemarketers(int projectId)
-		{
-			var result = await _mistakeReportService.GetMistakeReportTelemarketersAsync(projectId);
-
-			if (!string.IsNullOrEmpty(result.Message))
-				return BadRequest(new { message = result.Message });
-
-			return Ok(result.Data);
-		}
-
-		[HttpGet("GetMistakeTypes/{projectId}")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
-		public async Task<IActionResult> GetMistakeTypes(int projectId)
-		{
-			var result = await _mistakeReportService.GetMistakeTypesAsync(projectId);
-
-			if (!string.IsNullOrEmpty(result.Message))
-				return BadRequest(new { message = result.Message });
-
-			return Ok(result.Data);
-		}
 
 		[HttpPost("GetTeamMistakeReport")]
 		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]

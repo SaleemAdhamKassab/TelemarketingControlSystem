@@ -18,8 +18,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		Task<ResultWithMessage> UploadMistakeReportAsync(UploadMistakeReportRequest request, TenantDto authData);
 		Task<ResultWithMessage> GetMistakeReportAsync(MistakeReportRequest request);
 		Task<ResultWithMessage> GetMistakeTypesAsync();
-		Task<ResultWithMessage> GetMistakeReportTelemarketersAsync(int projectId);
-		Task<ResultWithMessage> GetMistakeTypesAsync(int projectId);
 		Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request);
 	}
 
@@ -95,9 +93,12 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			return projectMistakeDictionaries;
 		}
 
-		private IQueryable<MistakeReport> getMistakeReportQuery(MistakeReportRequest request)
+		private IQueryable<MistakeReport> getMistakeListQuery(MistakeReportRequest request)
 		{
-			IQueryable<MistakeReport> query = _db.MistakeReports.Where(e => e.ProjectId == request.ProjectId && !e.Project.IsDeleted);
+			var query = _db.MistakeReports.Where(e => !e.Project.IsDeleted);
+
+			if (request.ProjectIds != null && request.ProjectIds.Count() != 0)
+				query = query.Where(x => request.ProjectIds.Contains(x.ProjectId));
 
 			if (request.TelemarketerIds != null && request.TelemarketerIds.Count() != 0)
 				query = query.Where(x => request.TelemarketerIds.Contains(x.EmployeeId));
@@ -118,7 +119,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 		private IQueryable<ProjectDetail> getTeamMistakeReportQuery(TeamMistakeReportRequest request)
 		{
-			IQueryable<ProjectDetail> query = _db.ProjectDetails.Where(e => !e.IsDeleted && !e.Project.IsDeleted);
+			var query = _db.ProjectDetails.Where(e => !e.IsDeleted && !e.Project.IsDeleted);
 
 			if (request.ProjectsIds != null && request.ProjectsIds.Count() != 0)
 				query = query.Where(e => request.ProjectsIds.Contains(e.ProjectId));
@@ -126,13 +127,10 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			if (request.TelemarketersIds != null && request.TelemarketersIds.Count() != 0)
 				query = query.Where(e => request.TelemarketersIds.Contains(e.EmployeeId));
 
-			if (!string.IsNullOrEmpty(request.Filter.SearchQuery))
-				query = query.Where(e => e.Project.Name.Trim().ToLower().Contains(request.Filter.SearchQuery.Trim().ToLower()));
-
 			return query;
 		}
 
-		private IQueryable<MistakeReportResponse> convertToMistakeReportResponse(IQueryable<MistakeReport> query, int projectId)
+		private IQueryable<MistakeReportResponse> convertToMistakeReportResponse(IQueryable<MistakeReport> query)
 		{
 			return query.Select(e => new MistakeReportResponse()
 			{
@@ -367,13 +365,39 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			return new ResultWithMessage(result, string.Empty);
 		}
 
+		public async Task<ResultWithMessage> GetMistakeReportAsync(MistakeReportRequest request)
+		{
+			bool isAllProjectIdsValid = request.ProjectIds.All(projId => _db.Projects.Where(e => !e.IsDeleted).Select(e => e.Id).Contains(projId));
+			if (!isAllProjectIdsValid)
+				return new ResultWithMessage(null, $"Invalid Project Ids");
+
+
+			bool isAllTelemarketerIdsValid = request.TelemarketerIds.All(teleId => _db.Employees.Where(e => !e.IsDeleted).Select(e => e.Id).Contains(teleId));
+			if (!isAllTelemarketerIdsValid)
+				return new ResultWithMessage(null, $"Invalid Telemarketer Ids");
+
+			bool isAllMistakeTypesValid = request.MistakeTypes.All(mistakeType => _db.MistakeTypes.Select(e => e.Name).Contains(mistakeType));
+			if (!isAllMistakeTypesValid)
+				return new ResultWithMessage(null, $"Invalid Mistake Types");
+
+
+			//1) Apply Filters
+			var query = getMistakeListQuery(request);
+
+			//2) Generate List View Model
+			var result = convertToMistakeReportResponse(query);
+
+			//3) pagination
+			int resultSize = result.Count();
+			IQueryable<MistakeReportResponse> resultData = result.Skip(request.Filter.PageIndex * request.Filter.PageSize).Take(request.Filter.PageSize);
+
+			return new ResultWithMessage(new DataWithSize(resultSize, resultData), string.Empty);
+		}
+
 		public async Task<ResultWithMessage> UploadMistakeReportAsync(UploadMistakeReportRequest request, TenantDto authData)
 		{
-			//Project project = await _db.Projects.FindAsync(request.ProjectId);
-			//if (project is null)
-			//	return new ResultWithMessage(null, $"Invalid project id: {request.ProjectId}");
-
 			//------------------------------------ Sheet1: Mistakes Validations ------------------------------------//
+
 			string filePath = _excelService.SaveFile(request.MistakeReport, "MistakeReports");
 			List<ExcelMistakeReport> mistakeReportList = _excelService.Import<ExcelMistakeReport>(filePath, 0);
 
@@ -381,6 +405,14 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			var nullSurveyName = mistakeReportList.Select((z, i) => new { z.SurveyName, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.SurveyName));
 			if (nullSurveyName is not null)
 				return new ResultWithMessage(null, $"Mistakes Sheet1: Empty Survey Name at row number: [{nullSurveyName.i + 2}]");
+
+			var invalidProjectName = mistakeReportList
+					.Select((z, i) => new { z.SurveyName, i })
+					.Distinct()
+					.FirstOrDefault(e => !_db.Projects.Any(p => p.Name.Trim().ToLower() == e.SurveyName.Trim().ToLower()));
+
+			if (invalidProjectName is not null)
+				return new ResultWithMessage(null, $"Mistakes Sheet1: Invalid Survey Name at row number: {invalidProjectName.i + 2}, '{invalidProjectName.SurveyName}'");
 
 
 			//2) Telemarketers
@@ -431,10 +463,10 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 			_db.MistakeReports.AddRange(mistakeReportData);
 			_db.SaveChanges();
 
-			int initProjectId = mistakeReportData.Select(e => e.Id).FirstOrDefault();
+			int initProjectId = mistakeReportData.Select(e => e.ProjectId).FirstOrDefault();
 			var initialRequest = new MistakeReportRequest
 			{
-				ProjectId = initProjectId,
+				ProjectIds = [initProjectId],
 				Filter = new()
 				{
 					PageIndex = 0,
@@ -443,31 +475,11 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					SortActive = string.Empty,
 					SortDirection = string.Empty
 				},
-				TelemarketerIds = getMistakeReportTelemarketersAsync(initProjectId).Result.Select(e => e.Id).ToList(),
-				MistakeTypes = getMistakeTypesAsync(initProjectId).Result.Select(e => e.Name).ToList(),
+				TelemarketerIds = _db.MistakeReports.Where(e => e.ProjectId == initProjectId).Select(t => t.EmployeeId).Distinct().ToList(),
+				MistakeTypes = _db.MistakeReports.Where(e => e.ProjectId == initProjectId).Select(m => m.MistakeTypeName).Distinct().ToList(),
 			};
 
 			return await GetMistakeReportAsync(initialRequest);
-		}
-
-		public async Task<ResultWithMessage> GetMistakeReportAsync(MistakeReportRequest request)
-		{
-			Project project = await _db.Projects.FindAsync(request.ProjectId);
-
-			if (project is null)
-				return new ResultWithMessage(null, $"Invalid project Id: {request.ProjectId}");
-
-			//1) Apply Filters
-			IQueryable<MistakeReport> query = getMistakeReportQuery(request);
-
-			//2) Generate List View Model
-			IQueryable<MistakeReportResponse> result = convertToMistakeReportResponse(query, project.Id);
-
-			//3) pagination
-			int resultSize = result.Count();
-			IQueryable<MistakeReportResponse> resultData = result.Skip(request.Filter.PageIndex * request.Filter.PageSize).Take(request.Filter.PageSize);
-
-			return new ResultWithMessage(new DataWithSize(resultSize, resultData), string.Empty);
 		}
 
 		public async Task<ResultWithMessage> GetMistakeTypesAsync()
@@ -483,28 +495,6 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 				.ToListAsync();
 
 			return new ResultWithMessage(result, string.Empty);
-		}
-
-		public async Task<ResultWithMessage> GetMistakeReportTelemarketersAsync(int projectId)
-		{
-			Project project = await _db.Projects.FindAsync(projectId);
-			if (project is null)
-				return new ResultWithMessage(null, $"Invalid project Id: {projectId}");
-
-			var telemarketers = await getMistakeReportTelemarketersAsync(projectId);
-
-			return new ResultWithMessage(telemarketers, string.Empty);
-		}
-
-		public async Task<ResultWithMessage> GetMistakeTypesAsync(int projectId)
-		{
-			Project project = await _db.Projects.FindAsync(projectId);
-			if (project is null)
-				return new ResultWithMessage(null, $"Invalid project Id: {projectId}");
-
-			var mistakeTypes = await getMistakeTypesAsync(projectId);
-
-			return new ResultWithMessage(mistakeTypes, string.Empty);
 		}
 
 		public async Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request)
