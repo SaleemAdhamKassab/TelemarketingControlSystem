@@ -110,5 +110,18 @@ namespace TelemarketingControlSystem.Controllers
 
 			return Ok(result.Data);
 		}
+
+
+		[HttpPost("WeightVsSurveyLineChart")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> WeightVsSurveyLineChart(WeightVsSurveyReportRequest request)
+		{
+			var result = await _mistakeReportService.GetWeightVsSurveyLineChartAsync(request);
+
+			if (!string.IsNullOrEmpty(result.Message))
+				return BadRequest(new { message = result.Message });
+
+			return Ok(result.Data);
+		}
 	}
 }

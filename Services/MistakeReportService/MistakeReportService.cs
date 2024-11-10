@@ -6,6 +6,7 @@ using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using TelemarketingControlSystem.Services.ProjectEvaluationService;
 using TelemarketingControlSystem.Services.ExcelService;
 using static TelemarketingControlSystem.Services.ProjectStatisticService.ProjectStatisticsViewModels;
+using NPOI.SS.Formula.Functions;
 
 namespace TelemarketingControlSystem.Services.MistakeReportService
 {
@@ -21,6 +22,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		Task<ResultWithMessage> GetMistakeTypesAsync();
 		Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request);
 		Task<ResultWithMessage> GetWeightVsSurveyReportAsync(WeightVsSurveyReportRequest request);
+		Task<ResultWithMessage> GetWeightVsSurveyLineChartAsync(WeightVsSurveyReportRequest request);
 	}
 
 	public class MistakeReportService(ApplicationDbContext db, IExcelService excelService) : IMistakeReportService
@@ -562,6 +564,29 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 														})
 														.ToList()
 							})
+							.ToListAsync();
+
+			return new ResultWithMessage(result, string.Empty);
+		}
+
+		public async Task<ResultWithMessage> GetWeightVsSurveyLineChartAsync(WeightVsSurveyReportRequest request)
+		{
+			var query = _db.MistakeReports.Where(e => !e.Project.IsDeleted);
+
+			if (request.MistakeTypes != null && request.MistakeTypes.Count() != 0)
+				query = query.Where(x => request.MistakeTypes.Contains(x.MistakeType.Name));
+
+			if (request.EmployeeIds != null && request.EmployeeIds.Count() != 0)
+				query = query.Where(x => request.EmployeeIds.Contains(x.EmployeeId));
+
+			var result = await query
+							.GroupBy(g => g.MistakeTypeName)
+							.Select(e => new
+							{
+								MistakeType = e.Key,
+								TelemarketerMistakesCount = e.Count()
+							})
+							.OrderBy(e => e.MistakeType)
 							.ToListAsync();
 
 			return new ResultWithMessage(result, string.Empty);
