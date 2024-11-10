@@ -94,4 +94,10 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		public int MistakesCount { get; set; }
 		public decimal? MistakesPercentage { get; set; }
 	}
+
+	public class WeightVsSurveyReportRequest
+	{
+		public List<string> MistakeTypes { get; set; } = [];
+		public List<int> EmployeeIds { get; set; } = [];
+	}
 }

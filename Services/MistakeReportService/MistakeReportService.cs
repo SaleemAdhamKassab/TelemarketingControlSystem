@@ -5,6 +5,7 @@ using TelemarketingControlSystem.Models.Data;
 using static TelemarketingControlSystem.Services.Auth.AuthModels;
 using TelemarketingControlSystem.Services.ProjectEvaluationService;
 using TelemarketingControlSystem.Services.ExcelService;
+using static TelemarketingControlSystem.Services.ProjectStatisticService.ProjectStatisticsViewModels;
 
 namespace TelemarketingControlSystem.Services.MistakeReportService
 {
@@ -19,6 +20,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		Task<ResultWithMessage> GetMistakeReportAsync(MistakeReportRequest request);
 		Task<ResultWithMessage> GetMistakeTypesAsync();
 		Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request);
+		Task<ResultWithMessage> GetWeightVsSurveyReportAsync(WeightVsSurveyReportRequest request);
 	}
 
 	public class MistakeReportService(ApplicationDbContext db, IExcelService excelService) : IMistakeReportService
@@ -424,17 +426,17 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					.Select((z, i) => new { z.TelemarketerName, i })
 					.FirstOrDefault(e => !_db.Employees.Any(s => s.UserName.Trim().ToLower() == "Syriatel\\" + e.TelemarketerName.Trim().ToLower()));
 
-			//3) Mistake Types
-			var nullMistakeType = mistakeReportList.Select((z, i) => new { z.MistakeType, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.MistakeType));
-			if (nullMistakeType is not null)
-				return new ResultWithMessage(null, $"Mistakes Sheet1: Empty Mistake Type");
+			////3) Mistake Types
+			//var nullMistakeType = mistakeReportList.Select((z, i) => new { z.MistakeType, i }).FirstOrDefault(e => string.IsNullOrEmpty(e.MistakeType));
+			//if (nullMistakeType is not null)
+			//	return new ResultWithMessage(null, $"Mistakes Sheet1: Empty Mistake Type");
 
-			var invalidMistakeType = mistakeReportList
-					.Select((z, i) => new { z.MistakeType, i })
-					.FirstOrDefault(e => !_db.MistakeTypes.Any(s => s.Name.Trim().ToLower() == e.MistakeType.Trim().ToLower()));
+			//var invalidMistakeType = mistakeReportList
+			//		.Select((z, i) => new { z.MistakeType, i })
+			//		.FirstOrDefault(e => !_db.MistakeTypes.Any(s => s.Name.Trim().ToLower() == e.MistakeType.Trim().ToLower()));
 
-			if (invalidMistakeType is not null)
-				return new ResultWithMessage(null, $"Mistakes Sheet1: Invalid Mistake Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
+			//if (invalidMistakeType is not null)
+			//	return new ResultWithMessage(null, $"Mistakes Sheet1: Invalid Mistake Name at row number: {invalidMistakeType.i + 2}, '{invalidMistakeType.MistakeType}'");
 
 			//------------------------------- Create Sheet1 : Mistake Report -------------------------------//
 
@@ -525,7 +527,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 					projectName = e.Key.Name,
 					Telemarketer = Utilities.modifyUserName(e.Key.UserName),
 					CompletedQuestionnaire = _db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count(),
-					MistakesCount = _db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count(),
+					MistakesCount = _db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId && mr.MistakeTypeName.Trim().ToLower() != "note" && mr.MistakeTypeName.Trim().ToLower() != "no problem").Count(),
 					MistakesPercentage = (decimal)(_db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count()) == 0 ? null :
 					(decimal)(_db.MistakeReports.Where(mr => mr.ProjectId == e.Key.ProjectId && mr.EmployeeId == e.Key.EmployeeId).Count()) / (decimal)(_db.ProjectDetails.Where(pd => pd.ProjectId == e.Key.ProjectId && pd.EmployeeId == e.Key.EmployeeId && pd.CallStatus.IsClosed).Count())
 				});
@@ -536,6 +538,33 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 
 			//return result
 			return new ResultWithMessage(new DataWithSize(resultSize, resultData), string.Empty);
+		}
+		public async Task<ResultWithMessage> GetWeightVsSurveyReportAsync(WeightVsSurveyReportRequest request)
+		{
+			var query = _db.MistakeReports.Where(e => !e.Project.IsDeleted);
+
+			if (request.MistakeTypes != null && request.MistakeTypes.Count() != 0)
+				query = query.Where(x => request.MistakeTypes.Contains(x.MistakeType.Name));
+
+			if (request.EmployeeIds != null && request.EmployeeIds.Count() != 0)
+				query = query.Where(x => request.EmployeeIds.Contains(x.EmployeeId));
+
+			var result = await query
+							.GroupBy(g => g.MistakeTypeName)
+							.Select(e => new
+							{
+								MistakeType = e.Key,
+								TelemarketerMistakes = e.GroupBy(en => en.Employee.UserName)
+														.Select(t => new
+														{
+															Telemarketer = Utilities.modifyUserName(t.Key),
+															MistakesCount = t.Count()
+														})
+														.ToList()
+							})
+							.ToListAsync();
+
+			return new ResultWithMessage(result, string.Empty);
 		}
 	}
 }

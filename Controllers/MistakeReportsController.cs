@@ -98,5 +98,17 @@ namespace TelemarketingControlSystem.Controllers
 
 			return Ok(result.Data);
 		}
+
+		[HttpPost("WeightVsSurveyReport")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> WeightVsSurveyReport(WeightVsSurveyReportRequest request)
+		{
+			var result = await _mistakeReportService.GetWeightVsSurveyReportAsync(request);
+
+			if (!string.IsNullOrEmpty(result.Message))
+				return BadRequest(new { message = result.Message });
+
+			return Ok(result.Data);
+		}
 	}
 }
