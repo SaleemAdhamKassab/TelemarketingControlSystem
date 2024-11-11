@@ -123,5 +123,13 @@ namespace TelemarketingControlSystem.Controllers
 
 			return Ok(result.Data);
 		}
+
+		[HttpGet("GetAll")]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin"])]
+		public async Task<IActionResult> GetAll()
+		{
+			var result = await _mistakeReportService.GetAllAsync();
+			return Ok(result.Data);
+		}
 	}
 }

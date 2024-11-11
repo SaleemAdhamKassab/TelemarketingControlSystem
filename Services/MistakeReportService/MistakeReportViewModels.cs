@@ -100,4 +100,10 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		public List<string> MistakeTypes { get; set; } = [];
 		public List<int> EmployeeIds { get; set; } = [];
 	}
+
+	public class GetAllViewModel
+	{
+		public string MistakeType { get; set; } = string.Empty;
+		public int Count { get; set; }
+	}
 }

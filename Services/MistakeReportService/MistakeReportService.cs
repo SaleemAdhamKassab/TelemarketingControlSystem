@@ -23,6 +23,7 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 		Task<ResultWithMessage> GetTeamMistakeReportAsync(TeamMistakeReportRequest request);
 		Task<ResultWithMessage> GetWeightVsSurveyReportAsync(WeightVsSurveyReportRequest request);
 		Task<ResultWithMessage> GetWeightVsSurveyLineChartAsync(WeightVsSurveyReportRequest request);
+		Task<ResultWithMessage> GetAllAsync();
 	}
 
 	public class MistakeReportService(ApplicationDbContext db, IExcelService excelService) : IMistakeReportService
@@ -588,6 +589,22 @@ namespace TelemarketingControlSystem.Services.MistakeReportService
 							})
 							.OrderBy(e => e.MistakeType)
 							.ToListAsync();
+
+			return new ResultWithMessage(result, string.Empty);
+		}
+
+		public async Task<ResultWithMessage> GetAllAsync()
+		{
+			var result = await _db.MistakeReports
+				.Where(e => !e.Project.IsDeleted)
+				.GroupBy(g => g.MistakeType.Name)
+				.Select(e => new GetAllViewModel
+				{
+					MistakeType = e.Key,
+					Count = e.Count()
+				})
+				.OrderBy(e => e.MistakeType)
+				.ToListAsync();
 
 			return new ResultWithMessage(result, string.Empty);
 		}
