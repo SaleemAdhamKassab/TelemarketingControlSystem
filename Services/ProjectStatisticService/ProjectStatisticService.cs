@@ -146,6 +146,7 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 					})
 					.ToList()
 				})
+				.OrderBy(e => e.Status)
 				.ToList();
 
 			var reportFooter = query
@@ -172,7 +173,9 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 				{
 					Date = e.Key.Date,
 					Count = e.Count()
-				}).ToList();
+				})
+				.OrderBy(e => e.Date)
+				.ToList();
 
 			result.ClosedPerDays = closedPerDays;
 
