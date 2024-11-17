@@ -12,6 +12,7 @@ using TelemarketingControlSystem.Models.Notification;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using TelemarketingControlSystem.Services.ExcelService;
+using static TelemarketingControlSystem.Services.ProjectStatisticService.ProjectStatisticsViewModels;
 
 namespace TelemarketingControlSystem.Services.ProjectService
 {
@@ -68,7 +69,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 				query = query.Where(x => x.DateFrom >= filter.DateFrom && x.DateTo <= filter.DateTo);
 
 			if (filter.CreatedBy != null && filter.CreatedBy.Count() != 0)
-				query = query.Where(x => filter.CreatedBy.Contains(x.CreatedBy));
+				query = query.Where(x => filter.CreatedBy.Select(creator => "syriatel\\" + creator.Trim().ToLower()).Contains(x.CreatedBy.Trim().ToLower()));
 
 			if (filter.TypeIds != null && filter.TypeIds.Count() != 0)
 				query = query.Where(x => filter.TypeIds.Contains(x.ProjectTypeId));
@@ -97,10 +98,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 
 			if (!string.IsNullOrEmpty(filter.SearchQuery))
 				query = query.Where(e => e.GSM.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
-										 e.Contract.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
-										 e.AlternativeNumber.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
-										 e.Note.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()) ||
-										 e.CreatedBy.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
+										 e.Note.Trim().ToLower().Contains(filter.SearchQuery.Trim().ToLower()));
 
 			if (filter.ColumnFilters == null)
 			{
@@ -422,7 +420,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 					UserName = Utilities.modifyUserName(e.UserName)
 				})
 				.ToList();
-			
+
 			return new ResultWithMessage(employees, string.Empty);
 		}
 		public ResultWithMessage getById(int id, [FromBody] ProjectFilterModel filter, TenantDto authData)
@@ -478,6 +476,13 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		}
 		public ResultWithMessage getByFilter(ProjectFilterModel filter, TenantDto authData)
 		{
+			if (filter.DateFrom != null && filter.DateTo != null)
+			{
+				filter.DateFrom = Utilities.convertDateToArabStandardDate((DateTime)filter.DateFrom).Date;
+				filter.DateTo = Utilities.convertDateToArabStandardDate((DateTime)filter.DateTo).Date;
+			}
+
+
 			//1- Apply Filters just search query
 			var query = getProjectData(filter, authData);
 
