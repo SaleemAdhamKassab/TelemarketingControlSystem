@@ -10,7 +10,7 @@ namespace TelemarketingControlSystem.Services.NotificationHub
 
     public interface IHubService
     {
-        Task UpdateHubClient(string userName,string connectionId);
+        Task<ResultWithMessage> UpdateHubClient(string userName,string connectionId);
         ResultWithMessage GetRecentlyNotification(string userName);
         Task ReadNotification(int notificationId);
     }
@@ -23,25 +23,35 @@ namespace TelemarketingControlSystem.Services.NotificationHub
             _db = db;
         }
 
-        public  Task UpdateHubClient(string userName, string connectionId)
+        public async Task<ResultWithMessage> UpdateHubClient(string userName, string connectionId)
         {
-            var client=  _db.HubClients.AsNoTracking().FirstOrDefault(x=>x.userName== userName);
-            HubClient item = new HubClient();
-
-            if (client!=null)
+            try
             {
+                var client = await _db.HubClients.AsNoTracking().FirstOrDefaultAsync(x => x.userName == userName);
+
+                HubClient item = new HubClient();
+
+                if (client != null)
+                {
+                    item.connectionId = connectionId;
+                    item.userName = userName;
+                    item.Id = client.Id;
+                    _db.HubClients.Update(item);
+                    await _db.SaveChangesAsync();
+                    return new ResultWithMessage(null, null);
+                }
                 item.connectionId = connectionId;
                 item.userName = userName;
-                item.Id = client.Id;
-                _db.HubClients.Update(item);
-                _db.SaveChanges();
-               return Task.CompletedTask;
+                await _db.HubClients.AddAsync(item);
+                await _db.SaveChangesAsync();
+                return new ResultWithMessage(null, null);
             }
-            item.connectionId = connectionId;
-            item.userName = userName;
-            _db.HubClients.Add(item);
-            _db.SaveChanges();
-            return Task.CompletedTask;
+            catch(Exception ex)
+            {
+                return new ResultWithMessage(null,"Notifications : Please connect to system admin.");
+
+            }
+
 
 
         }

@@ -50,9 +50,13 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		{
 			IQueryable<Project> query;
 
-			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString()))
-				query = _db.Projects.Where(e => !e.IsDeleted);
-			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
+			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString())
+				|| authData.tenantAccesses[0].RoleList.Contains(enRoles.Researcher.ToString()))
+			{
+                query = _db.Projects.Where(e => !e.IsDeleted);
+
+            }
+            else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
 			{
 				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
 				query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted);

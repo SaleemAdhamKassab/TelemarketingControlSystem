@@ -34,10 +34,15 @@ namespace TelemarketingControlSystem.Controllers
 
 
 		[HttpGet("UpdateHubClient")]
-		public IActionResult UpdateHubClient(string connectionId)
+		public async Task<IActionResult> UpdateHubClient(string connectionId)
 		{
 			var user = authData();
-			return Ok(_hubService.UpdateHubClient(user.userName, connectionId));
+
+			if (user is null)
+				return BadRequest();
+
+			var response = await _hubService.UpdateHubClient(user.userName, connectionId);
+            return _returnResultWithMessage(response);
 		}
 
 		[HttpGet("ReadNotification")]
@@ -53,7 +58,13 @@ namespace TelemarketingControlSystem.Controllers
 		public IActionResult GetUserNotification()
 		{
 			var user = authData();
-			return Ok(_hubService.GetRecentlyNotification(user.userName));
+
+            if (user is null)
+                return BadRequest();
+
+			var response = _hubService.GetRecentlyNotification(user.userName);
+
+            return _returnResultWithMessage(response);
 		}
 
 	}
