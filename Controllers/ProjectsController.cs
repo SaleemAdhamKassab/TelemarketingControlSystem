@@ -44,7 +44,7 @@ namespace TelemarketingControlSystem.Controllers
 		public IActionResult getCallStatuses() => _returnResultWithMessage(_projectService.getCallStatuses());
 
 		[HttpGet("getEmployees")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer,Researcher"])]
 		public IActionResult getEmployees() => _returnResultWithMessage(_projectService.getEmployees());
 
 		[HttpPost("getById")]
@@ -53,7 +53,7 @@ namespace TelemarketingControlSystem.Controllers
 
 
 		[HttpPost("getByFilter")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer,Researcher"])]
 		public IActionResult getByFilter([FromBody] ProjectFilterModel filter) => _returnResultWithMessage(_projectService.getByFilter(filter, authData()));
 
 		[HttpPost("create")]

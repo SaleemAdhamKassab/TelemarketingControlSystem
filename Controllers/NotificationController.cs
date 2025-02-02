@@ -41,7 +41,7 @@ namespace TelemarketingControlSystem.Controllers
 		}
 
 		[HttpGet("ReadNotification")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer,Researcher"])]
 
 		public IActionResult ReadNotification(int id)
 		{
@@ -49,7 +49,7 @@ namespace TelemarketingControlSystem.Controllers
 		}
 
 		[HttpGet("GetUserNotification")]
-		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer"])]
+		[TypeFilter(typeof(AuthTenant), Arguments = ["Admin,Telemarketer,Researcher"])]
 		public IActionResult GetUserNotification()
 		{
 			var user = authData();

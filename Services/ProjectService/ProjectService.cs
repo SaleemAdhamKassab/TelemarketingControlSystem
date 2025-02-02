@@ -164,7 +164,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			  DateTo = e.DateTo,
 			  Quota = e.Quota,
 			  TypeId = e.ProjectTypeId,
-			  Type = e.ProjectType.Name,
+			  Type = e.ProjectType != null ? e.ProjectType.Name : "",
 			  CreatedBy = Utilities.modifyUserName(e.CreatedBy),
 			  IsClosed = e.DateTo.Date < DateTime.Now.Date,
 		  });
@@ -486,8 +486,12 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			//1- Apply Filters just search query
 			var query = getProjectData(filter, authData);
 
-			//2- Generate List View Model
-			var queryViewModel = convertProjectsToListViewModel(query);
+			if(query is null)
+                return new ResultWithMessage(new DataWithSize(0, null), string.Empty);
+
+
+            //2- Generate List View Model
+            var queryViewModel = convertProjectsToListViewModel(query);
 
 			//3- Sorting using our extension
 			filter.SortActive = filter.SortActive == string.Empty ? "ID" : filter.SortActive;
