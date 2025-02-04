@@ -13,6 +13,7 @@ using TelemarketingControlSystem.Services.SegmentService;
 using TelemarketingControlSystem.Services.ProjectEvaluationService;
 using TelemarketingControlSystem.Services.MistakeReportService;
 using TelemarketingControlSystem.Services.ExcelService;
+using TelemarketingControlSystem.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSignalR();
@@ -73,14 +74,6 @@ builder.Services.AddSwaggerGen(setup =>
 builder.Services.AddAuthentication(IISDefaults.AuthenticationScheme).AddNegotiate();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<ClaimsPrincipal>(s => s.GetService<IHttpContextAccessor>().HttpContext.User);
-//////
-//builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", builder =>
-//{
-//	builder.AllowAnyMethod()
-//			.AllowAnyHeader()
-//			.SetIsOriginAllowed(origin => true) // allow any origin you can change here to allow localhost:4200
-//			.AllowCredentials();
-//}));
 
 
 var origins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
@@ -88,14 +81,26 @@ var origins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
 builder.Services.AddCors(o => o.AddPolicy("CorsPolicy", builder =>
 {
 	builder.AllowAnyMethod()
-			.AllowAnyHeader()
-			.SetIsOriginAllowed(origin => origins.Contains("all") || origins
+			.AllowAnyHeader().WithExposedHeaders("X-Content-Type-Options")
+            .SetIsOriginAllowed(origin => origins.Contains("all") || origins
 			.Select(x => x.ToLower()).Contains(origin.ToLower())) // allow any origin you can change here to allow localhost:4200
 			.AllowCredentials();
 }));
 
-
 var app = builder.Build();
+
+// Register Audit Middleware
+app.UseMiddleware<RequestAuditMiddleware>();
+
+//add anti-clickjacking header (security issues)
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("Content-Security-Policy", "frame-ancestors 'none';");
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+
+    await next();
+});
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
@@ -108,6 +113,7 @@ app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapHub<NotifiyHub>("/Notify");
 
 app.MapControllers();
