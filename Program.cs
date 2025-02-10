@@ -92,12 +92,19 @@ var app = builder.Build();
 // Register Audit Middleware
 app.UseMiddleware<RequestAuditMiddleware>();
 
-//add anti-clickjacking header (security issues)
 app.Use(async (context, next) =>
 {
+    //add anti-clickjacking header (security issues)
     context.Response.Headers.Add("X-Frame-Options", "DENY");
     context.Response.Headers.Add("Content-Security-Policy", "frame-ancestors 'none';");
     context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    // Add CSP Middleware
+    context.Response.Headers.Append("Content-Security-Policy",
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' https://trusted.cdn.com; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: https://images.com; " +
+        "font-src 'self' https://fonts.googleapis.com;");
 
     await next();
 });
