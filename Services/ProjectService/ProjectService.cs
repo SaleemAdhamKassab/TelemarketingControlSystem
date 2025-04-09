@@ -46,17 +46,17 @@ namespace TelemarketingControlSystem.Services.ProjectService
 		private readonly IConfiguration _config = config;
 		private readonly IExcelService _excelService = excelService;
 
-		private IQueryable<Project> getProjectData(ProjectFilterModel filter, TenantDto authData)
+		private IQueryable<Project>? getProjectData(ProjectFilterModel filter, TenantDto authData)
 		{
 			IQueryable<Project> query;
 
 			if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Admin.ToString())
 				|| authData.tenantAccesses[0].RoleList.Contains(enRoles.Researcher.ToString()))
 			{
-                query = _db.Projects.Where(e => !e.IsDeleted);
+				query = _db.Projects.Where(e => !e.IsDeleted);
 
-            }
-            else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
+			}
+			else if (authData.tenantAccesses[0].RoleList.Contains(enRoles.Telemarketer.ToString()))
 			{
 				Employee employee = _db.Employees.Single(e => e.UserName == authData.userName);
 				query = _db.Projects.Where(e => e.ProjectDetails.Any(e => e.EmployeeId == employee.Id) && !e.IsDeleted);
@@ -490,12 +490,12 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			//1- Apply Filters just search query
 			var query = getProjectData(filter, authData);
 
-			if(query is null)
-                return new ResultWithMessage(new DataWithSize(0, null), string.Empty);
+			if (query is null)
+				return new ResultWithMessage(new DataWithSize(0, null), string.Empty);
 
 
-            //2- Generate List View Model
-            var queryViewModel = convertProjectsToListViewModel(query);
+			//2- Generate List View Model
+			var queryViewModel = convertProjectsToListViewModel(query);
 
 			//3- Sorting using our extension
 			filter.SortActive = filter.SortActive == string.Empty ? "ID" : filter.SortActive;
@@ -639,7 +639,8 @@ namespace TelemarketingControlSystem.Services.ProjectService
 					};
 
 					project.ProjectDetails.Add(projectDetail);
-				};
+				}
+				;
 
 				//2) create project default dictionary
 				List<ProjectDictionary> projectDefaultDictionary = _db.ProjectTypeDictionaries
@@ -819,7 +820,7 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			projectDetailToUpdate.EmployeeId = model.EmployeeID;
 			projectDetailToUpdate.Note = model.Note;
 			projectDetailToUpdate.LastUpdatedBy = authData.userName;
-			projectDetailToUpdate.LastUpdatedDate = DateTime.Now;
+			projectDetailToUpdate.LastUpdatedDate = model.LastUpdateDate ?? DateTime.Now;
 
 			_db.ProjectDetails.Update(projectDetailToUpdate);
 			_db.SaveChanges();

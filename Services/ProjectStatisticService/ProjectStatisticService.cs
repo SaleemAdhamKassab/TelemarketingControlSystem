@@ -187,7 +187,13 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 			if (!query.Any())
 				return new ResultWithMessage(null, "No Data Found");
 
-			double totalMinutes = query.Select(e => e.DurationInSeconds).Sum() / 60.0;
+			// N/A Total Minutes
+			int employeesCount = query.Select(e => e.ProjectDetail.EmployeeId).Distinct().Count();
+			double totalWorkingMinutes = employeesCount * 60.0;
+			double sumHasStatusMinutes = query.Where(e => e.ProjectDetail.CallStatus.Name != null).Sum(e => e.DurationInSeconds) / 60.0;
+			double naTotalMinutes = totalWorkingMinutes - sumHasStatusMinutes;
+
+			double totalMinutes = (query.Select(e => e.DurationInSeconds).Sum() / 60.0) + naTotalMinutes;
 
 			double closedCallsAvg = 0;
 			var closedCallsAvgQuery = query
@@ -221,21 +227,13 @@ namespace TelemarketingControlSystem.Services.ProjectStatisticService
 
 
 			// get N/A value
-			//1) Total working hours
-			int employeesCount = query.Select(e => e.ProjectDetail.EmployeeId).Distinct().Count();
-			double totalWorkingMinutes = employeesCount * 60.0;
-			//2) Has status
-			double sumHasStatusMinutes = query.Where(e => e.ProjectDetail.CallStatus.Name != null).Sum(e => e.DurationInSeconds) / 60.0;
-			//3) N/A total
-			double naTotal = totalWorkingMinutes - sumHasStatusMinutes;
-			//4) assign to result
 			HourlyStatusTarget naStatusTarget = new()
 			{
 				Status = "N/A",
-				TotalMinutes = naTotal,
-				HourPercentage = naTotal / totalMinutes,
-				Rate = (naTotal / totalMinutes) * 60.0,
-				Target = closedCallsAvg != 0 ? (naTotal / totalMinutes) * 60.0 / closedCallsAvg : 0
+				TotalMinutes = naTotalMinutes,
+				HourPercentage = naTotalMinutes / totalMinutes,
+				Rate = (naTotalMinutes / totalMinutes) * 60.0,
+				Target = closedCallsAvg != 0 ? (naTotalMinutes / totalMinutes) * 60.0 / closedCallsAvg : 0
 			};
 
 			hourlyStatusTargets.Add(naStatusTarget);
