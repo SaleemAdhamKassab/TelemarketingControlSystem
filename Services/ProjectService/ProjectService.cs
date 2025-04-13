@@ -816,6 +816,11 @@ namespace TelemarketingControlSystem.Services.ProjectService
 			if (projectDetailToUpdate is null)
 				return new ResultWithMessage(null, $"Empty Project Detail");
 
+			if (model.LastUpdateDate != null)
+			{
+				model.LastUpdateDate = Utilities.convertDateToArabStandardDate((DateTime)model.LastUpdateDate).Date;
+			}
+
 			projectDetailToUpdate.CallStatusId = model.CallStatusId;
 			projectDetailToUpdate.EmployeeId = model.EmployeeID;
 			projectDetailToUpdate.Note = model.Note;
